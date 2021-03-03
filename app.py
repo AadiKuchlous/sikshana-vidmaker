@@ -10,9 +10,12 @@ app = Flask(__name__)
 files_index = AutoIndex(app, os.path.curdir + '/videos', add_url_rules=False)
 app.secret_key = 'super secret key'
 
+if __name__ == "__main__":
+	app.run(host='0.0.0.0')
+
 @app.route('/', methods=["GET", "POST"])
 def index():
-	pass
+	return "<h1 style='color:blue'>Hello There!</h1>"
 
 @app.route('/new', methods=["GET", "POST"])
 def new_xl_form():
