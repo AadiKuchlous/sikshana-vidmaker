@@ -49,7 +49,7 @@ def form_submit():
 		else:
 			tmpdir = session.get('tmpdir', None)
 			print(tmpdir)
-			cmd = './main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) + ' &'
+			cmd = './main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) #+ ' &'
 			print(cmd)
 			os.system(cmd)
 			return 'Sheet: ' + sheetName + '; story: ' + story + '; Video Name: ' + videoName + '; Name available'
