@@ -12,7 +12,7 @@ app.secret_key = 'super secret key'
 
 @app.route('/', methods=["GET", "POST"])
 def index():
-	return "<h1 style='color:blue'>Hello There!</h1>"
+	return render_template('index.html')
 
 @app.route('/new', methods=["GET", "POST"])
 def new_xl_form():
