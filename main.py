@@ -1,11 +1,15 @@
-#!/Users/aadikuchlous/Desktop/programming/sikshana-videomaker/env/bin/python
+#!/home/ubuntu/sikshana-vidmaker/env/bin/python
+
 import os
 import sys
 import boto3
 import openpyxl
 import shutil
+import re
 
 
+sys.path.append('/usr/bin')
+os.system("export PATH=$PATH:/usr/bin")
 
 def aws_polly(text, data_type):
 	client = boto3.client('polly')
@@ -60,6 +64,8 @@ def create_images(text, image, story=False):
 	no_of_lines = len(text.strip().split('\n'))
 	text = underline_html(text)
 	text = text.split('\n')
+	print('lines:')
+	print(text)
 	new_text = []
 	for line in text:
 		new_text.append(line.strip())
@@ -73,7 +79,7 @@ def create_images(text, image, story=False):
 	if type(image) == type(''):
 		image_link = "https://drive.google.com/uc?export=download&id="+image.split('d/')[1].split('/view')[0]
 		print("link: "+image_link)
-		os.system("wget '{0}' -O '{1}'".format(image_link, image_name))
+		os.system("/usr/bin/wget '{0}' -O '{1}'".format(image_link, image_name))
 	for i in range(len(words)):
 		text_html = ''
 		if words[i][0] in "-:#\n[":
@@ -105,37 +111,44 @@ def create_images(text, image, story=False):
 		logo = '<img src="logo.png" style="position: absolute; top: 0px; left: 0px;"></img>'
 		if type(image) == type(''):
 			if story:
-				if no_of_lines < 6:
-					text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(5.5-(0.5*no_of_lines), text_html)
+				if no_of_lines < 4:
+					text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(3, text_html)
 				else:
 					text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(1, text_html)
-				img = '<div style="height:350px"><img src="{}" style="padding-top:30px"></img></div>'.format(image_name)
-				html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px; padding:10px">{0}<div style="height: 360px; display: flex; justify-content: center; align-items: flex-start;">{1}{2}</div></div></body></html>'.format(img, text, logo)
+				img = '<div style="height:350px;"><img src="{}" style="padding-top:40px;"></img></div>'.format(image_name)
+				html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}<div style="height: 360px; display: flex; justify-content: center; align-items: center; padding: 20px; padding-top: 30px;">{1}{2}</div></div></body></html>'.format(img, text, logo)
 
 			else:
 				img = '<div style="height:425px"><img src="{}" style="padding-top:30px"></img></div>'.format(image_name)
 				text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(7-no_of_lines, text_html)
-				html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}<div style="height: 360px; display: flex; justify-content: center; align-items: flex-start;">{1}{2}</div></div></body></html>'.format(img, text, logo)
+				html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}<div style="height: 360px; display: flex; justify-content: center; align-items: center; padding:20px">{1}{2}</div></div></body></html>'.format(img, text, logo)
 		else:
-			text = '<div style="height: 720px; display: flex; justify-content: center; align-items: center;"><h1 style="font-size: {0}rem; margin-top: 0px"><p style="margin: 0.5em; text-align:center">{1}</p></h1></div>'.format(7-no_of_lines, text_html)
+			if no_of_lines < 4:
+
+				text = '<div style="height: 720px; display: flex; justify-content: center; align-items: center;"><h1 style="font-size: {0}rem; margin-top: 0px"><p style="margin: 0.5em; text-align:center">{1}</p></h1></div>'.format(3.5, text_html)
+			else:
+				text = '<div style="height: 720px; display: flex; justify-content: center; align-items: center;"><h1 style="font-size: {0}rem; margin-top: 0px"><p style="margin: 0.5em; text-align:center">{1}</p></h1></div>'.format(3, text_html)
 			html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}{1}</div></body></html>'.format(text, logo)
 		print(text)
 		with open("tmp.html", "w") as f:
 			f.write(html)
 
-		cmd = "node pup.js file://{0}/tmp.html images/{1}.jpg".format(os.getcwd(), str(i))
+		cmd = "/usr/bin/node pup.js file://{0}/tmp.html images/{1}.jpg".format(os.getcwd(), str(i))
+		print("PUP CMD: {}".format(cmd))
 		os.system(cmd)
 
 		images.append("images/{}.jpg".format(i))
-	
+
 	return(images)
 
 
 def concatenate_videos(videos, output_name, tmpdir):
 	with open('{}/con.in'.format(tmpdir), 'w') as f:
+		print(videos)
 		for video in videos:
 			f.write("file '{0}/{1}'\n".format(tmpdir, video))
-	os.system("ffmpeg -y -f concat -safe 0 -i {0}/con.in -strict -2 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}".format(tmpdir, output_name))
+	print(sys.path)
+	os.system("/usr/bin/ffmpeg -y -f concat -safe 0 -i {0}/con.in -strict -2 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 '{1}'".format(tmpdir, output_name))
 
 
 def create_para_vid(speed, i, time_data, images, audio, output_name):
@@ -159,33 +172,46 @@ def create_para_vid(speed, i, time_data, images, audio, output_name):
 
 		f.write("file '{0}' \n".format(images[-1]))
 		f.write("duration {} \n".format(prev_time+0.5))
-	os.system("ffmpeg -y -i {0} -f concat -i ffmp.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}nf.mp4".format(audio, output_name))
+	os.system("/usr/bin/ffmpeg -y -i {0} -f concat -i ffmp.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}nf.mp4".format(audio, output_name))
 	with open('blank.in', 'w') as f:
 		f.write('\n'.join(["file '{0}'".format(images[-1]), "duration {}".format("1.3")]))
-	os.system("ffmpeg -y -i {0} -f concat -i blank.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 fill{1}.mp4".format("blank_long.mp3", str(i)))
+	os.system("/usr/bin/ffmpeg -y -i {0} -f concat -i blank.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 fill{1}.mp4".format("blank_long.mp3", str(i)))
 	concatenate_videos(['{0}nf.mp4'.format(output_name), 'fill{}.mp4'.format(i)], output_name+'.mp4', os.getcwd())
 
 
 def create_intro_video(sheet):
+	image = sheet.cell(row=2, column=3).value
 	text = (sheet.cell(row=2, column=2).value).split('\n')
 	audio_data = polly_audio('. '.join(text))
 	with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data.read())
-	os.system("ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "intro_audio.mp3"))
+	os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "intro_audio.mp3"))
 	with open('intro.in', 'w') as f:
 		f.write('\n'.join(["file \'images/{0}.jpg\'".format("intro"), "duration {}".format(5)]))
 	headers = ''
 	for line in text:
-		headers += '<h1 style="font-size:2.5rem">{}</h1>'.format(line)
+		headers += '<h1 style="font-size:{}rem">{}</h1>'.format(4-(0.5*len(text)), line)
 	logo = '<img src="logo.png" style="position: absolute; top: 0px; left: 0px;"></img>'
-	html = '<!DOCTYPE html><html><body><div id="vid_area" style="height: 720px; width:1280px; display: flex; flex-direction: column; justify-content: center; align-items: center;">{0}{1}</div></body></html>'.format(logo, headers)
+	image_name = "intro.png"
+	if type(image) == type(''):
+		image_link = "https://drive.google.com/uc?export=download&id="+image.split('d/')[1].split('/view')[0]
+		print("link: "+image_link)
+		os.system("/usr/bin/wget '{0}' -O '{1}'".format(image_link, image_name))
+		print(headers)
+		img = '<div style="height:350px"><img src="{}" style=""></img></div>'.format(image_name)
+		html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px; padding:10px">{0}<div style="height: 360px; display: flex; justify-content: center; align-items:flex-start; padding-top:{3}px">{1}</div>{2}</div></body></html>'.format(img, headers, logo, 80-(20*len(text)))
+	else:
+		html = '<!DOCTYPE html><html><body><div id="vid_area" style="height: 720px; width:1280px; display: flex; flex-direction: column; justify-content: center; align-items: center;">{0}{1}</div></body></html>'.format(logo, headers)
 	with open("intro.html", "w") as f:
 			f.write(html)
-	os.system("node pup.js file://{0}/intro.html images/{1}.jpg".format(os.getcwd(), "intro"))
-	os.system("ffmpeg -y -i {0} -f concat -i intro.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}.mp4".format("intro_audio.mp3", "intronf"))
+	print(os.getcwd())
+	cmd = "/usr/bin/node pup.js file://{}/intro.html images/{}.jpg".format(os.getcwd(), "intro")
+	print("PUP CMD INTRO:{}".format(cmd))
+	os.system(cmd)
+	os.system("/usr/bin/ffmpeg -y -i {0} -f concat -i intro.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}.mp4".format("intro_audio.mp3", "intronf"))
 	with open('blank.in', 'w') as f:
 		f.write('\n'.join(["file \'images/{0}.jpg\'".format("intro"), "duration {}".format("2.5")]))
-	os.system("ffmpeg -y -i {0} -f concat -i blank.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 fill{1}.mp4".format("blank.mp3", "intro"))
+	os.system("/usr/bin/ffmpeg -y -i {0} -f concat -i blank.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 fill{1}.mp4".format("blank.mp3", "intro"))
 	concatenate_videos(["intronf.mp4", "fillintro.mp4"], "intro.mp4", os.getcwd())
 	return("intro.mp4")
 
@@ -203,7 +229,7 @@ def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slid
 	for f in files:
 		shutil.copy(f, "{0}/{1}".format(tmpdir, f))
 	os.chdir(tmpdir)
-	os.system('mkdir images')
+	os.mkdir('images')
 	sheet = read_excel(inpfile, sheet)
 	create_intro_video(sheet)
 	normal_videos = []
@@ -227,14 +253,14 @@ def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slid
 		audio_data = polly_audio(polly_para)
 		with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data.read())
-		os.system("ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio.mp3"))
-		os.system("sox audio.mp3 audio_slow.mp3 tempo 0.75")
+		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio.mp3"))
+		os.system("/usr/bin/sox audio.mp3 audio_slow.mp3 tempo 0.75")
 		split_para = '. '.join(polly_para.split())
 		json_data_split = polly_json(split_para)
 		audio_data_split = polly_audio(split_para)
 		with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data_split.read())
-		os.system("ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio_split.mp3"))
+		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio_split.mp3"))
 
 		images_text = ' '.join(para.strip().replace('*', '').replace('\n', ' \n ').split(' '))
 		print(images_text)
@@ -250,7 +276,9 @@ def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slid
 		split_videos.append("vid{}-split.mp4".format(str(i-start+1)))
 
 	os.chdir(os.path.join(mdir, 'videos'))
-	os.system("mkdir {}".format(output_name.replace(' ', '\ ')))
+	# os.system("/usr/bin/mkdir {}".format(output_name.replace(' ', '\ ')))
+	os.mkdir(output_name)
+	print(output_name)
 	os.chdir(os.path.join(os.getcwd(), output_name))
 	print(os.getcwd())
 
@@ -273,4 +301,6 @@ output_name = str(sys.argv[4])
 story = str(sys.argv[5])
 first_slide = sys.argv[6]
 last_slide = sys.argv[7]
+print(sys.path)
+print(tmpdir)
 create_vids_from_excel(inpfile, sheet_name, tmpdir, story, first_slide, last_slide)
