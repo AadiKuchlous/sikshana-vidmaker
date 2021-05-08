@@ -1,0 +1,29 @@
+{%macro sheet_tab(name, sheet_uid, book_uid)%}
+<!-- BOOK_TAB -->
+<li id='{{sheet_uid}}-sheet-li' class="{{book_uid}}-li">
+<a href="javascript:void(0)" onClick="openTab(event, '{{book_uid}}', '{{sheet_uid}}-sheet')">{{name}}</a>
+</li>
+{%endmacro%}
+
+{%macro sheet_div(book_uid, sheet_uid)%}
+<!-- BOOK_DIV -->
+<div id="{{sheet_uid}}-sheet" class="tabcontent {{book_uid}}"{% if width %} style="{% if width %}width:{{width}}px;{%endif%}{% if height %}height:{{height}}px;{%endif%}{% if width or height %}overflow: hidden;{%endif%}"{% endif %}>
+  <div id="{{sheet_uid}}"></div>
+</div>
+{%endmacro%}
+
+{%macro sheet_script(sheet_uid, content, style)%}
+// BOOK_SHEET
+  var sheetHandle = {};
+  sheetHandle.element = document.querySelector("#{{sheet_uid}}");
+
+  var mydata = {{content}};
+  var customStyle = {{ style }};
+  sheetHandle.config = Object.assign({}, config, customStyle);
+  sheetHandle.config.data = mydata;
+  sheetHandle.handsontable = new Handsontable(sheetHandle.element, sheetHandle.config);
+  sheetHandle.sheetId = "{{sheet_uid}}";
+  if(tableHandles){
+    tableHandles.push(sheetHandle);
+  }
+{%endmacro%}

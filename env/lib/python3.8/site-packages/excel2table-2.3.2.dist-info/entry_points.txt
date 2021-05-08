@@ -1,0 +1,3 @@
+[console_scripts]
+excel2table = excel2table.cli:cli
+

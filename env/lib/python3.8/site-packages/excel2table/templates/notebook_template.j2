@@ -1,0 +1,23 @@
+<script>
+    require.config({
+       "jquery": "nbextensions/excel2table/jquery.min.js",
+       "datatable": "nbextensions/excel2table/jquery.dataTables.min.js",
+       "echarts": "nbextensions/excel2table/echarts.min.js",
+       "dtScroller": "nbextensions/excel2table/dataTables.scroller.min.js",
+       "dtButtons": "nbextensions/excel2table/dataTables.buttons.min.js",
+       "html5": "nbextensions/excel2table/buttons.html5.min.js",
+       "print": "nbextensions/excel2table/buttons.print.min.js",
+       "chart": "nbextensions/excel2table/buttons.chart.min.js",
+    });
+</script>
+<table id="table">
+	{%- if caption %}
+	<caption>{{ caption }}</caption>
+	{%- endif %}
+</table>
+<div id='echart'></div>
+<script>
+  require(['jquery', 'datatable', 'echarts', 'dtScroller', 'dtButtons', 'html5', 'print', 'chart'], function(){
+      $('#table').DataTable({{datatable_options|safe}});
+  }
+</script>
