@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends 'base.html' %}
+{% block head %}
+	% block content %}}
 	<title>Submitted</title>
-</head>
-<body>
+{% endblock %}
+{% block content %}
 	<p>A video is being made with the following details:</p>
 	<ul>
 		<li>File name: {{fname}}</li>
@@ -12,8 +12,10 @@
 		<li>Last page row: {{lslide}}</li>
 		<li>Video name: {{vname}}</li>
 		<li>Story: {{story}}</li>
+		<li>Voice: {{voice}}</li>
 	</ul>
 <p>The videos will show up shortly on the following page for you to view and download:</p>
 <button type="button" onclick="window.location.href='/files'">Download page</button>
-</body>
-</html>
+<p>You can view the status of your video on the following page:</p>
+<button type="button" onclick="window.location.href='/status'">Status page</button>
+{% endblock %}

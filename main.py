@@ -3,13 +3,42 @@
 import os
 import sys
 import boto3
+import json
+import base64
 import openpyxl
 import shutil
 import re
+import subprocess as sub
+import requests
+from pymongo import MongoClient
 
+client = MongoClient("mongodb+srv://Aadi:Aadi4321@vidmaker-cluster.vtdh4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+db=client.vidmakerdb
 
 sys.path.append('/usr/bin')
 os.system("export PATH=$PATH:/usr/bin")
+
+def google_tts(text, speed=1):
+	print(text)
+	data = {
+		"input": {
+			"ssml": text
+		},
+		"voice": {
+			"languageCode": "en-IN",
+			"name": "en-IN-Wavenet-C"
+		},
+		"audioConfig": {
+			"audioEncoding": "MP3",
+			"speakingRate": speed
+		},
+		"enableTimePointing": ["SSML_MARK"]
+	}
+	response = requests.post("https://texttospeech.googleapis.com/v1beta1/text:synthesize?key=AIzaSyB1g0wvkqho9U-axmvAJu0ypmeRoSxpSz8", data=json.dumps(data))
+	jsonresponse = response.json()
+	print(jsonresponse["timepoints"])
+	return (base64.decodebytes(jsonresponse["audioContent"].encode("ascii")), jsonresponse["timepoints"])
+
 
 def aws_polly(text, data_type):
 	client = boto3.client('polly')
@@ -42,25 +71,11 @@ def polly_json(text):
 	return(json_data)
 
 
-# def underline_html(text):
-# 	html = ""
-# 	first = True
-# 	for i in text:
-# 		if i != '_':
-# 			html += i
-# 		else:
-# 			if first:
-# 				html += '<u>'
-# 				first = False
-# 			else:
-# 				html += '</u>'
-# 				first = True
-# 	return html
-
 def underline_html(text):
 	return text.replace("._", "<u>").replace("_.", "</u>")
 
 def create_images(text, image, story=False):
+	story = True if story=='1' else False
 	no_of_lines = len(text.strip().split('\n'))
 	text = underline_html(text)
 	text = text.split('\n')
@@ -69,20 +84,20 @@ def create_images(text, image, story=False):
 	new_text = []
 	for line in text:
 		new_text.append(line.strip())
-	new_text = ' '.join(new_text)
-	words = new_text.split(' ')
+	words = ' '.join(new_text).split(' ')
+	words =  [i for i in words if i != '']
 	print("create_images words:{0}".format(words))
 	print("no_of_lines: " + str(no_of_lines))
 	print(image)
 	images = []
 	image_name = "tmp.png"
-	if type(image) == type(''):
+	if type(image) == type('') and image.strip() != '':
 		image_link = "https://drive.google.com/uc?export=download&id="+image.split('d/')[1].split('/view')[0]
 		print("link: "+image_link)
 		os.system("/usr/bin/wget '{0}' -O '{1}'".format(image_link, image_name))
 	for i in range(len(words)):
 		text_html = ''
-		if words[i][0] in "-:#\n[":
+		if words[i][0] in "-:#\n[/":
 				continue
 
 		for j in range(len(words)):
@@ -94,7 +109,7 @@ def create_images(text, image, story=False):
 				text_html += words[j][1:-1]
 				continue
 
-			if words[j] == '\n':
+			if words[j] == '\n' or words[j] == "//":
 				text_html += '<br>'
 				continue
 
@@ -129,7 +144,7 @@ def create_images(text, image, story=False):
 			else:
 				text = '<div style="height: 720px; display: flex; justify-content: center; align-items: center;"><h1 style="font-size: {0}rem; margin-top: 0px"><p style="margin: 0.5em; text-align:center">{1}</p></h1></div>'.format(3, text_html)
 			html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}{1}</div></body></html>'.format(text, logo)
-		print(text)
+#		print(text)
 		with open("tmp.html", "w") as f:
 			f.write(html)
 
@@ -148,18 +163,13 @@ def concatenate_videos(videos, output_name, tmpdir):
 		for video in videos:
 			f.write("file '{0}/{1}'\n".format(tmpdir, video))
 	print(sys.path)
-	os.system("/usr/bin/ffmpeg -y -f concat -safe 0 -i {0}/con.in -strict -2 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 '{1}'".format(tmpdir, output_name))
+	sub.call("/usr/bin/ffmpeg -y -f concat -safe 0 -i {0}/con.in -strict -2 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6".format(tmpdir).split(' ') + [output_name])
 
 
 def create_para_vid(speed, i, time_data, images, audio, output_name):
 	end_times = []
-	time_data_l = 0
-	for l in time_data.iter_lines():
-		time = int(l.decode().split(",")[0][8:])/(1000) * (1/speed)
-		time_data_l +=1
-		end_times.append(time)
-
-	end_times = end_times[1:]
+	for time in time_data:
+		end_times.append(time * (1/speed))
 	print(end_times)
 
 	with open("ffmp.in", "w") as f:
@@ -179,29 +189,55 @@ def create_para_vid(speed, i, time_data, images, audio, output_name):
 	concatenate_videos(['{0}nf.mp4'.format(output_name), 'fill{}.mp4'.format(i)], output_name+'.mp4', os.getcwd())
 
 
-def create_intro_video(sheet):
+def create_intro_video(sheet, voice):
 	image = sheet.cell(row=2, column=3).value
 	text = (sheet.cell(row=2, column=2).value).split('\n')
-	audio_data = polly_audio('. '.join(text))
-	with open('audio_uf.mp3', 'wb') as f:
+	footer = sheet.cell(row=2, column=4).value
+	if type(footer) == type('') and footer.strip() != '':
+		footer_html = "<address style='text-align: center;'>"
+		footer = footer.strip()
+		for line in footer.split('\n'):
+			footer_html += line + "<br>"
+		footer_bool = True
+		footer_html += "</address>"
+	else:
+		footer_bool = False
+
+	if voice == "female":
+		audio_data = polly_audio('. '.join(text).replace("._", "").replace("_.", "").replace('*', '.').replace('#', '').replace('__', ' - ').replace('_', '').replace("//", " "))
+		with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data.read())
+	elif voice == "male":
+		text_n = '. '.join(text).replace("._", "").replace("_.", "").replace('*', '.').replace('#', '').replace('__', ' - ').replace('_', '').replace("//", " ")
+		(audio_data, json) = google_tts("<speak>{}</speak>".format(text_n))
+		with open('audio_uf.mp3', 'wb') as f:
+                        f.write(audio_data)
+
 	os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "intro_audio.mp3"))
 	with open('intro.in', 'w') as f:
 		f.write('\n'.join(["file \'images/{0}.jpg\'".format("intro"), "duration {}".format(5)]))
 	headers = ''
+	for i in range(len(text)):
+		text[i] = ' '.join(text[i].strip().replace('*', '').split(' '))
 	for line in text:
 		headers += '<h1 style="font-size:{}rem">{}</h1>'.format(4-(0.5*len(text)), line)
 	logo = '<img src="logo.png" style="position: absolute; top: 0px; left: 0px;"></img>'
 	image_name = "intro.png"
-	if type(image) == type(''):
+	if type(image) == type('') and image.strip() != '':
 		image_link = "https://drive.google.com/uc?export=download&id="+image.split('d/')[1].split('/view')[0]
 		print("link: "+image_link)
 		os.system("/usr/bin/wget '{0}' -O '{1}'".format(image_link, image_name))
 		print(headers)
 		img = '<div style="height:350px"><img src="{}" style=""></img></div>'.format(image_name)
-		html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px; padding:10px">{0}<div style="height: 360px; display: flex; justify-content: center; align-items:flex-start; padding-top:{3}px">{1}</div>{2}</div></body></html>'.format(img, headers, logo, 80-(20*len(text)))
+		if footer_bool:
+			html = "<!DOCTYPE html><html><body style='margin:0px'><div id='vid_area' style='height: 720px; width: 1280px; padding:10px'>{0}<div style='height: 360px; display: flex; justify-content: center; align-items:flex-start; padding-top:{3}px'>{1}</div>{2}{4}</div></body></html>".format(img, headers, logo, 80-(20*len(text)), footer_html)
+		else:
+			html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px; padding:10px">{0}<div style="height: 360px; display: flex; justify-content: center; align-items:flex-start; padding-top:{3}px">{1}</div>{2}</div></body></html>'.format(img, headers, logo, 80-(20*len(text)))
 	else:
-		html = '<!DOCTYPE html><html><body><div id="vid_area" style="height: 720px; width:1280px; display: flex; flex-direction: column; justify-content: center; align-items: center;">{0}{1}</div></body></html>'.format(logo, headers)
+		if footer_bool:
+			html = '<!DOCTYPE html><html><body><div id="vid_area" style="height: 720px; width:1280px; display: flex; flex-direction: column; justify-content: center; align-items: center;">{0}{1}{2}</div></body></html>'.format(logo, headers, footer_html)
+		else:
+			html = '<!DOCTYPE html><html><body><div id="vid_area" style="height: 720px; width:1280px; display: flex; flex-direction: column; justify-content: center; align-items: center;">{0}{1}</div></body></html>'.format(logo, headers)
 	with open("intro.html", "w") as f:
 			f.write(html)
 	print(os.getcwd())
@@ -222,26 +258,9 @@ def read_excel(inpfile, sheet):
 	print(wb.sheetnames)
 	return(wb[sheet])
 
-
-def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slide):
-	mdir = os.getcwd()
-	files = ['pup.js', 'blank.mp3', 'blank_long.mp3', 'logo.png']
-	for f in files:
-		shutil.copy(f, "{0}/{1}".format(tmpdir, f))
-	os.chdir(tmpdir)
-	os.mkdir('images')
-	sheet = read_excel(inpfile, sheet)
-	create_intro_video(sheet)
-	normal_videos = []
-	slow_videos = []
-	split_videos = []
-	start = int(first_slide)
-	end = int(last_slide)+1
-	for i in range(start, end):
-		if not sheet.cell(row=i, column=1).value:
-			continue
-		para = sheet.cell(row=i, column=2).value.strip()
-		polly_para = para.replace("._", "").replace("_.", "").replace('*', '.').replace('#', '').replace('__', ' - ').replace('_', '').replace('\n','. ')
+def create_audio_data(para, voice):
+	if voice == "female":
+		polly_para = para.replace("._", "").replace("_.", "").replace('*', '.').replace('#', '').replace('__', ' - ').replace('_', '').replace("//", " ")
 		polly_para_split = polly_para.split()
 		polly_para = ""
 		for word in polly_para_split:
@@ -261,22 +280,83 @@ def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slid
 		with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data_split.read())
 		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio_split.mp3"))
+	elif voice == "male":
+		google_para = ' '.join(para.replace("._", "").replace("_.", "").replace('*', '.').replace('#', '').replace('__', '').replace('_', '').replace("//", " ").split())
+		google_para_split = google_para.split()
+		google_para_f = ""
+		for i in range(len(google_para_split)):
+			word = google_para_split[i]
+			google_para_f += word + " <mark name='{}'/>".format(i)
+		(audio_data, json_data) = google_tts("<speak>{}</speak>".format(google_para_f))
+		json_data_slow = json_data
+		print(json_data)
+		print(json_data_slow)
+
+		with open('audio_uf.mp3', 'wb') as f:
+			f.write(audio_data)
+		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio.mp3"))
+		os.system("/usr/bin/sox audio.mp3 audio_slow.mp3 tempo 0.75")
+		split_para = ('. '.join(google_para.split())).split()
+		google_para_f = ""
+		for i in range(len(split_para)):
+			word = split_para[i]
+			google_para_f += word + " <mark name='{}'/>".format(i)
+		(audio_data_split, json_data_split) = google_tts("<speak>{}</speak>".format(google_para_f))
+		print("json_data_split:", json_data_split)
+		with open('audio_uf.mp3', 'wb') as f:
+			f.write(audio_data_split)
+		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio_split.mp3"))
+	return (json_data, json_data_slow, json_data_split)
+
+def process_json_data(data, voice):
+	time_data = []
+	if voice == "female":
+		for l in data.iter_lines():
+			time = int(l.decode().split(",")[0][8:])/(1000)
+			time_data.append(time)
+	if voice == "male":
+		for m in data:
+			time_data.append(m["timeSeconds"])
+	return(time_data)
+
+
+def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slide, voice):
+	mdir = os.getcwd()
+	files = ['pup.js', 'blank.mp3', 'blank_long.mp3', 'logo.png']
+	for f in files:
+		shutil.copy(f, "{0}/{1}".format(tmpdir, f))
+	os.chdir(tmpdir)
+	os.mkdir('images')
+	sheet = read_excel(inpfile, sheet)
+	create_intro_video(sheet, voice)
+	normal_videos = []
+	slow_videos = []
+	split_videos = []
+	start = int(first_slide)
+	end = int(last_slide)+1
+	for i in range(start, end):
+		if not sheet.cell(row=i, column=1).value:
+			continue
+		para = sheet.cell(row=i, column=2).value.strip()
+		(json_data, json_data_slow, json_data_split) = create_audio_data(para, voice)
 
 		images_text = ' '.join(para.strip().replace('*', '').replace('\n', ' \n ').split(' '))
-		print(images_text)
+#		print("images text: " + images_text)
 		images = create_images(images_text, sheet.cell(row=i, column=3).value, story)
-		print("polly_para: "+polly_para)
+
+		json_data = process_json_data(json_data, voice)
+		json_data_slow = process_json_data(json_data_slow, voice)
+		json_data_split = process_json_data(json_data_split, voice)
 
 		create_para_vid(1, i-start-1, json_data, images, 'audio.mp3', "vid{}".format(str(i-start+1)))
-		create_para_vid(0.75, i-2, json_data_slow, images, 'audio_slow.mp3', "vid{}-slow".format(str(i-start+1)))
-		create_para_vid(1, i-2, json_data_split, images, 'audio_split.mp3', "vid{}-split".format(str(i-start+1)))
+		create_para_vid(0.75, i-start-1, json_data_slow, images, 'audio_slow.mp3', "vid{}-slow".format(str(i-start+1)))
+		create_para_vid(1, i-start-1, json_data_split, images, 'audio_split.mp3', "vid{}-split".format(str(i-start+1)))
 
 		normal_videos.append("vid{}.mp4".format(str(i-start+1)))
 		slow_videos.append("vid{}-slow.mp4".format(str(i-start+1)))
 		split_videos.append("vid{}-split.mp4".format(str(i-start+1)))
 
 	os.chdir(os.path.join(mdir, 'videos'))
-	# os.system("/usr/bin/mkdir {}".format(output_name.replace(' ', '\ ')))
 	os.mkdir(output_name)
 	print(output_name)
 	os.chdir(os.path.join(os.getcwd(), output_name))
@@ -286,14 +366,8 @@ def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slid
 	concatenate_videos(["intro.mp4"]+slow_videos, "{}-medium.mp4".format(output_name), tmpdir)
 	concatenate_videos(["intro.mp4"]+split_videos, "{}-slow.mp4".format(output_name), tmpdir)
 
-	# os.system("rm *.mp4")
-	# os.system("rm a*.mp3")
-	# os.system("rm *.in")
-	# os.system("rm *_a*.mp3")
-	# os.system("rm *.html")
-	# os.system("rm -r images")
 
-#read_excel("input.xlsx")
+
 inpfile = str(sys.argv[1])
 sheet_name = str(sys.argv[2])
 tmpdir = str(sys.argv[3])
@@ -301,6 +375,16 @@ output_name = str(sys.argv[4])
 story = str(sys.argv[5])
 first_slide = sys.argv[6]
 last_slide = sys.argv[7]
-print(sys.path)
-print(tmpdir)
-create_vids_from_excel(inpfile, sheet_name, tmpdir, story, first_slide, last_slide)
+voice = sys.argv[8]
+tmpname = "tmp" + re.search("^.*tmp(.*)$", tmpdir)[1]
+filter = {"tmp": tmpname}
+
+try:
+	create_vids_from_excel(inpfile, sheet_name, tmpdir, story, first_slide, last_slide, voice)
+	newvalues = { "$set": { 'status': "Successful" } }
+	result=db.data.update_one(filter, newvalues)
+except Exception as e:
+	print(e)
+	newvalues = { "$set": { 'status': "Failed" } }
+	result=db.data.update_one(filter, newvalues)
+

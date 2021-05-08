@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block head %}
+    {{ super() }}
+    <style>
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+
+    .Processing {
+      background-color: yellow;
+    }
+
+    .Failed {
+      background-color: red;
+    }
+
+    .Successful {       
+      background-color: green;
+    }
+    </style>
+<script>
+    window.setInterval('refresh()', 5000); 	
+    // Call a function every 10000 milliseconds 
+    // (OR 10 seconds).
+
+    // Refresh or reload page.
+    function refresh() {
+        window .location.reload();
+    }
+</script>
+{% endblock %}
+{% block content %}
+        <h2>Status Page</h2>
+	<table>
+	<tr>
+		<th>Name of Video</th>
+		<th>Date and Time of Upload</th>
+		<th>Status</th>
+	</tr>
+	{% for entry in data %}
+ 	  <tr class={{ entry['status'] }}>
+		<td>
+		  {{ entry['name'] }}
+		</td>
+		<td>
+                  {{ entry['time sent'] }}
+                </td>
+		<td>
+                  {{ entry['status'] }}
+                </td>
+	  </tr>
+	{% endfor %}
+	</table>
+{% endblock %}
+
+

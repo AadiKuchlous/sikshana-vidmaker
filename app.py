@@ -7,21 +7,78 @@ import os
 import logging
 import sys
 import shutil
+import pyexcel as pe
+import re
+from pymongo import MongoClient
+from datetime import datetime
+from flask_assets import Environment, Bundle
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import login_user, login_required, current_user, LoginManager
+from flask_sqlalchemy import SQLAlchemy
 
+client = MongoClient("mongodb+srv://Aadi:Aadi4321@vidmaker-cluster.vtdh4.mongodb.net/vidmakerdb?retryWrites=true&w=majority")
+db = client.vidmakerdb
 
 app = Flask(__name__)
-files_index = AutoIndex(app, os.path.curdir + '/videos', add_url_rules=False)
+
 app.secret_key = 'super secret key'
+
+userdb = SQLAlchemy()
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+userdb.init_app(app)
+
+from user_model import User
+
+login_manager = LoginManager()
+login_manager.login_view = 'login'
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+assets = Environment(app)
+css_bundle = Bundle('navbar.css', output='packed.css')
+assets.register('css_all', css_bundle)
+
+files_index = AutoIndex(app, os.path.curdir + '/videos', add_url_rules=False)
 gunicorn_logger = logging.getLogger('/home/ubuntu/gunicorn.error')
 app.logger.handlers = gunicorn_logger.handlers
 
+@app.route('/test', methods=["GET", "POST"])
+def test():
+	return render_template('test.html', page='index')
+
 @app.route('/', methods=["GET", "POST"])
 def index():
-	return render_template('index.html')
+	return render_template('index.html', page='index')
 
+@app.route('/rename', methods=["GET", "POST"])
+def rename():
+	oldname = request.form['oldname']
+	newname = request.form['new_name']
+	cwd = os.getcwd()
+	os.chdir('videos')
+	os.rename(oldname, newname)
+	os.chdir(newname)
+	os.rename(oldname+"-fast.mp4", newname+"-fast.mp4")
+	os.rename(oldname+"-medium.mp4", newname+"-medium.mp4")
+	os.rename(oldname+"-slow.mp4", newname+"-slow.mp4")
+	os.chdir(cwd)
+	return redirect(url_for('autoindex'))
+	return "Old Name: " + oldname + "; New Name: " + newname + "; " + os.getcwd()
+
+@app.route('/table', methods=["GET", "POST"])
+def handson():
+#	return request.args.get('tmp')
+	tmp = request.args.get('tmp')
+	tmpname = re.search("^.*tmp(.*)$", tmp)[1]
+	pe.save_book_as(file_name='{}/input.xlsx'.format(tmp), dest_file_name='/home/ubuntu/sikshana-vidmaker/templates/{}.handsontable.html'.format(tmpname))
+	return render_template('{}.handsontable.html'.format(tmpname))
+#	return "Hello World!"
 @app.route('/new', methods=["GET", "POST"])
 def new_xl_form():
-	return render_template('xlform.html')
+	return render_template('xlform.html', page='upload')
 
 @app.route('/new_data', methods=["GET", "POST"])
 def new_vid_data():
@@ -40,7 +97,7 @@ def new_vid_data():
 	session['sheets'] = sheets
 	session['tmpdir'] = tmpdir
 	app.logger.error(tmpdir)
-	return render_template('dataform.html', header="", sheets=sheets)
+	return render_template('dataform.html', header="", sheets=sheets, tmp=tmpdir, page='upload')
 
 @app.route('/form_submit', methods=["GET", "POST"])
 def form_submit():
@@ -52,6 +109,8 @@ def form_submit():
 		videoName = request.form["name"]
 		first_slide = request.form["s1"]
 		last_slide = request.form["sl"]
+		voice = request.form["gender"]
+
 		story = str(1 if len(request.form.getlist('story')) == 1 else 0)
 
 		if os.path.exists("videos/{}".format(videoName)):
@@ -59,22 +118,87 @@ def form_submit():
 		else:
 			tmpdir = session['tmpdir']
 			app.logger.error(tmpdir)
-			cmd = './main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) + ' > log.txt' + ' &'
+			cmd = './main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) + ' ' + voice.lower() + ' > log.txt' + ' &'
 			app.logger.error(cmd)
 			os.system(cmd)
-			return render_template('formsubmit.html', fname=session['fname'], sname=sheetName, fslide=first_slide, lslide=last_slide, vname=videoName)
-			return 'Sheet: ' + sheetName + '; story: ' + story + '; Video Name: ' + videoName + '; Name available'
+			now = datetime.now()
+			dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+			tmpname = "tmp" + re.search("^.*tmp(.*)$", tmpdir)[1]
+			entry = {
+				'tmp':tmpname,
+				'name':videoName,
+				'status':"Processing",
+				'time sent':dt_string,
+				'user':"User"
+			}
+			result=db.data.insert_one(entry)
+			story = ("Yes" if story == "1" else "No")
+			return render_template('formsubmit.html', fname=session['fname'], sname=sheetName, fslide=first_slide, lslide=last_slide, vname=videoName, story=story, voice=voice, page='upload')
+
+@app.route('/status/', methods=["GET", "POST"])
+def status():
+	data = db.data.find().sort('_id', -1)
+	return render_template('status_page.html', data = data, page='status')
+
 
 @app.route('/files/')
 @app.route('/files/<path:path>')
 def autoindex(path='.'):
-	return files_index.render_autoindex(path)
+	return files_index.render_autoindex(path, template_context = dict(page = 'download', preview = request.args.get('preview')))
 
-@app.route('/delete')
+@app.route('/delete', methods=["GET", "POST"])
 def delete():
 	# return request.args.get('name'),  os.getcwd(), url_for(request.args.get('name'))
-	shutil.rmtree(os.path.join(os.getcwd(), 'videos', request.args.get('name')))
+	name = request.form['name-to-delete']
+	shutil.rmtree(os.path.join(os.getcwd(), 'videos', name))
 	return redirect(url_for('autoindex'))
+
+@app.route('/profile')
+@login_required
+def profile():
+        return render_template("profile.html", page="profile", name=current_user.name)
+
+@app.route('/login')
+def login():
+        return render_template("login.html", page="login")
+
+@app.route('/login', methods=['POST'])
+def login_post():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    remember = True if request.form.get('remember') else False
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user or not check_password_hash(user.password, password):
+        flash('Please check your login details and try again.')
+        return redirect(url_for('login'))
+
+    login_user(user, remember=remember)
+    return redirect(url_for('profile'))
+
+@app.route('/signup')
+def signup():
+        return render_template("signup.html", page="signup")
+
+@app.route('/signup', methods=['POST'])
+def signup_post():
+    email = request.form.get('email')
+    name = request.form.get('name')
+    password = request.form.get('password')
+
+    user = User.query.filter_by(email=email).first()
+
+    if user:
+        flash('Email address already exists')
+        return redirect(url_for('signup'))
+
+    new_user = User(email=email, name=name, password=generate_password_hash(password, method='sha256'))
+
+    userdb.session.add(new_user)
+    userdb.session.commit()
+
+    return redirect(url_for('login'))
 
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')

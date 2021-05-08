@@ -1,14 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<title></title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block content %}
 	<h2>Upload the Excel Sheet</h2>
+
 	<form enctype="multipart/form-data" method="POST" action="/new_data">
 		<label for="fname"></label><br>
-		<input type="file" id="file" name="file" value=""><br><br>
+		<input type="file" id="file" name="file" value="" required><br><br>
 		<input type="submit" value="Submit">
 	</form>
-</body>
-</html>
+{% endblock %}
+

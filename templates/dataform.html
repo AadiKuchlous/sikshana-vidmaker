@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<title></title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block content %}
 	<h2>{{header}}</h2>
 	<form enctype="multipart/form-data" method="POST" action="/form_submit">
 
@@ -15,19 +11,44 @@
 		</select>
 		<br><br>
 
-		<label for="lname">First slide:</label><br>
-		<input type="number" id="s1" name="s1" value=""><br><br>
+		<label for="lname">Row Number of First Slide:</label><br>
+		<input type="number" id="s1" name="s1" value="" required><br><br>
 
-		<label for="lname">Last slide:</label><br>
-		<input type="number" id="sl" name="sl" value=""><br><br>
+		<label for="lname">Row Number of Last Slide:</label><br>
+		<input type="number" id="sl" name="sl" value="" required><br><br>
 
 		<label for="lname">Video name:</label><br>
-		<input type="text" id="name" name="name" value=""><br><br>
+		<input type="text" id="name" name="name" value="" required><br><br>
 
 		<input type="checkbox" id="story" name="story">
 		<label for="story"> Story</label><br><br>
-
+		
+		Select the Voice: <br>
+		<input type="radio" id="male" name="gender" value="male" checked="checked">
+  		<label for="male">Male</label><br>
+  		<input type="radio" id="female" name="gender" value="female">
+  		<label for="female">Female</label><br><br>
+		
 		<input type="submit" value="Submit">
 	</form>
-</body>
-</html>
+
+<br><br>
+<button onclick="settableURL()">View Table</button>
+<button onclick="setfileURL()">View Files</button>
+<iframe id="iframe" src="" style="display:none" width="100%" height="500px"></iframe>
+
+{% endblock %}
+
+{% block head %}
+	{{ super() }}
+	<script>
+	  function settableURL(){
+	    document.getElementById('iframe').src = "{{ url_for('handson', tmp=tmp) }}";
+	    document.getElementById('iframe').style.display = "block";
+	  }
+	  function setfileURL(){
+	    document.getElementById('iframe').src = "{{ url_for('autoindex', preview='true') }}";
+	    document.getElementById('iframe').style.display = "block";
+	  }
+	</script>
+{% endblock %}
