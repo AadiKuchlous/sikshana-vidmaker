@@ -1,15 +1,20 @@
-{% macro navbar(page) -%}
+{% macro navbar(page, current_user) -%}
 	<ul>
             <li><a class={{ 'active' if page == 'index' else 'inactive' }} href="{{ url_for('index') }}">Home</a></li>
             <li><a class={{ 'active' if page == 'upload' else 'inactive' }} href="{{ url_for('new_xl_form') }}">Upload</a></li>
             <li><a class={{ 'active' if page == 'status' else 'inactive' }} href="{{ url_for('status') }}">Status</a></li>
             <li><a class={{ 'active' if page == 'download' else 'inactive' }} href="{{ url_for('autoindex') }}">Downloads</a></li>
 
-{#
+	{% if current_user.is_authenticated %}
         <li style="float:right"><a class={{ 'active' if page == 'profile' else 'inactive' }} href="{{ url_for('profile') }}">Profile</a></li>
-        <li style="float:right"><a class={{ 'active' if page == 'login' else 'inactive' }} href="{{ url_for('login') }}">Login</a></li>
+        {% endif %}
+	{% if not current_user.is_authenticated %}
+	<li style="float:right"><a class={{ 'active' if page == 'login' else 'inactive' }} href="{{ url_for('login') }}">Login</a></li>
         <li style="float:right"><a class={{ 'active' if page == 'signup' else 'inactive' }} href="{{ url_for('signup') }}">Signup</a></li>
-#}
+        {% endif %}
+	{% if current_user.is_authenticated %}
+	<li style="float:right"><a class={{ 'active' if page == 'logout' else 'inactive' }} href="{{ url_for('logout') }}">Logout</a></li>
+	{% endif %}
 	</ul>
 
 {%- endmacro -%}

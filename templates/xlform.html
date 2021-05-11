@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-	<h2>Upload the Excel Sheet</h2>
+	<h2>Upload the Excel Sheet {{ user }}</h2>
 
 	<form enctype="multipart/form-data" method="POST" action="/new_data">
 		<label for="fname"></label><br>

@@ -1,5 +1,4 @@
-#!/home/ubuntu/sikshana-vidmaker/env/bin/python
-
+#!/Library/Frameworks/Python.framework/Versions/3.6/bin/python3
 import os
 import sys
 import boto3
@@ -13,10 +12,7 @@ import requests
 from pymongo import MongoClient
 
 client = MongoClient("mongodb+srv://Aadi:Aadi4321@vidmaker-cluster.vtdh4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
-db=client.vidmakerdb
-
-sys.path.append('/usr/bin')
-os.system("export PATH=$PATH:/usr/bin")
+db=client.testdb
 
 def google_tts(text, speed=1):
 	print(text)
@@ -94,7 +90,7 @@ def create_images(text, image, story=False):
 	if type(image) == type('') and image.strip() != '':
 		image_link = "https://drive.google.com/uc?export=download&id="+image.split('d/')[1].split('/view')[0]
 		print("link: "+image_link)
-		os.system("/usr/bin/wget '{0}' -O '{1}'".format(image_link, image_name))
+		os.system("wget '{0}' -O '{1}'".format(image_link, image_name))
 	for i in range(len(words)):
 		text_html = ''
 		if words[i][0] in "-:#\n[/":
@@ -148,7 +144,7 @@ def create_images(text, image, story=False):
 		with open("tmp.html", "w") as f:
 			f.write(html)
 
-		cmd = "/usr/bin/node pup.js file://{0}/tmp.html images/{1}.jpg".format(os.getcwd(), str(i))
+		cmd = "node pup.js file://{0}/tmp.html images/{1}.jpg".format(os.getcwd(), str(i))
 		print("PUP CMD: {}".format(cmd))
 		os.system(cmd)
 
@@ -163,7 +159,7 @@ def concatenate_videos(videos, output_name, tmpdir):
 		for video in videos:
 			f.write("file '{0}/{1}'\n".format(tmpdir, video))
 	print(sys.path)
-	sub.call("/usr/bin/ffmpeg -y -f concat -safe 0 -i {0}/con.in -strict -2 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6".format(tmpdir).split(' ') + [output_name])
+	sub.call("ffmpeg -y -f concat -safe 0 -i {0}/con.in -strict -2 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6".format(tmpdir).split(' ') + [output_name])
 
 
 def create_para_vid(speed, i, time_data, images, audio, output_name):
@@ -182,10 +178,10 @@ def create_para_vid(speed, i, time_data, images, audio, output_name):
 
 		f.write("file '{0}' \n".format(images[-1]))
 		f.write("duration {} \n".format(prev_time+0.5))
-	os.system("/usr/bin/ffmpeg -y -i {0} -f concat -i ffmp.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}nf.mp4".format(audio, output_name))
+	os.system("ffmpeg -y -i {0} -f concat -i ffmp.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}nf.mp4".format(audio, output_name))
 	with open('blank.in', 'w') as f:
 		f.write('\n'.join(["file '{0}'".format(images[-1]), "duration {}".format("1.3")]))
-	os.system("/usr/bin/ffmpeg -y -i {0} -f concat -i blank.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 fill{1}.mp4".format("blank_long.mp3", str(i)))
+	os.system("ffmpeg -y -i {0} -f concat -i blank.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 fill{1}.mp4".format("blank_long.mp3", str(i)))
 	concatenate_videos(['{0}nf.mp4'.format(output_name), 'fill{}.mp4'.format(i)], output_name+'.mp4', os.getcwd())
 
 
@@ -213,7 +209,7 @@ def create_intro_video(sheet, voice):
 		with open('audio_uf.mp3', 'wb') as f:
                         f.write(audio_data)
 
-	os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "intro_audio.mp3"))
+	os.system("ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "intro_audio.mp3"))
 	with open('intro.in', 'w') as f:
 		f.write('\n'.join(["file \'images/{0}.jpg\'".format("intro"), "duration {}".format(5)]))
 	headers = ''
@@ -226,7 +222,7 @@ def create_intro_video(sheet, voice):
 	if type(image) == type('') and image.strip() != '':
 		image_link = "https://drive.google.com/uc?export=download&id="+image.split('d/')[1].split('/view')[0]
 		print("link: "+image_link)
-		os.system("/usr/bin/wget '{0}' -O '{1}'".format(image_link, image_name))
+		os.system("wget '{0}' -O '{1}'".format(image_link, image_name))
 		print(headers)
 		img = '<div style="height:350px"><img src="{}" style=""></img></div>'.format(image_name)
 		if footer_bool:
@@ -241,13 +237,13 @@ def create_intro_video(sheet, voice):
 	with open("intro.html", "w") as f:
 			f.write(html)
 	print(os.getcwd())
-	cmd = "/usr/bin/node pup.js file://{}/intro.html images/{}.jpg".format(os.getcwd(), "intro")
+	cmd = "node pup.js file://{}/intro.html images/{}.jpg".format(os.getcwd(), "intro")
 	print("PUP CMD INTRO:{}".format(cmd))
 	os.system(cmd)
-	os.system("/usr/bin/ffmpeg -y -i {0} -f concat -i intro.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}.mp4".format("intro_audio.mp3", "intronf"))
+	os.system("ffmpeg -y -i {0} -f concat -i intro.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 {1}.mp4".format("intro_audio.mp3", "intronf"))
 	with open('blank.in', 'w') as f:
 		f.write('\n'.join(["file \'images/{0}.jpg\'".format("intro"), "duration {}".format("2.5")]))
-	os.system("/usr/bin/ffmpeg -y -i {0} -f concat -i blank.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 fill{1}.mp4".format("blank.mp3", "intro"))
+	os.system("ffmpeg -y -i {0} -f concat -i blank.in -strict -2 -vsync vfr -pix_fmt yuv420p -vf fps=24 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6 fill{1}.mp4".format("blank.mp3", "intro"))
 	concatenate_videos(["intronf.mp4", "fillintro.mp4"], "intro.mp4", os.getcwd())
 	return("intro.mp4")
 
@@ -272,14 +268,14 @@ def create_audio_data(para, voice):
 		audio_data = polly_audio(polly_para)
 		with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data.read())
-		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio.mp3"))
-		os.system("/usr/bin/sox audio.mp3 audio_slow.mp3 tempo 0.75")
+		os.system("ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio.mp3"))
+		os.system("sox audio.mp3 audio_slow.mp3 tempo 0.75")
 		split_para = '. '.join(polly_para.split())
 		json_data_split = polly_json(split_para)
 		audio_data_split = polly_audio(split_para)
 		with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data_split.read())
-		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio_split.mp3"))
+		os.system("ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio_split.mp3"))
 	elif voice == "male":
 		google_para = ' '.join(para.replace("._", "").replace("_.", "").replace('*', '.').replace('#', '').replace('__', '').replace('_', '').replace("//", " ").split())
 		google_para_split = google_para.split()
@@ -294,8 +290,8 @@ def create_audio_data(para, voice):
 
 		with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data)
-		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio.mp3"))
-		os.system("/usr/bin/sox audio.mp3 audio_slow.mp3 tempo 0.75")
+		os.system("ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio.mp3"))
+		os.system("sox audio.mp3 audio_slow.mp3 tempo 0.75")
 		split_para = ('. '.join(google_para.split())).split()
 		google_para_f = ""
 		for i in range(len(split_para)):
@@ -305,7 +301,7 @@ def create_audio_data(para, voice):
 		print("json_data_split:", json_data_split)
 		with open('audio_uf.mp3', 'wb') as f:
 			f.write(audio_data_split)
-		os.system("/usr/bin/ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio_split.mp3"))
+		os.system("ffmpeg -y -i {} -ar 48000 {}".format("audio_uf.mp3", "audio_split.mp3"))
 	return (json_data, json_data_slow, json_data_split)
 
 def process_json_data(data, voice):
@@ -320,7 +316,7 @@ def process_json_data(data, voice):
 	return(time_data)
 
 
-def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slide, voice):
+def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slide, voice, user):
 	mdir = os.getcwd()
 	files = ['pup.js', 'blank.mp3', 'blank_long.mp3', 'logo.png']
 	for f in files:
@@ -356,7 +352,7 @@ def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slid
 		slow_videos.append("vid{}-slow.mp4".format(str(i-start+1)))
 		split_videos.append("vid{}-split.mp4".format(str(i-start+1)))
 
-	os.chdir(os.path.join(mdir, 'videos'))
+	os.chdir(os.path.join(mdir, 'videos', user))
 	os.mkdir(output_name)
 	print(output_name)
 	os.chdir(os.path.join(os.getcwd(), output_name))
@@ -376,11 +372,12 @@ story = str(sys.argv[5])
 first_slide = sys.argv[6]
 last_slide = sys.argv[7]
 voice = sys.argv[8]
+user = sys.argv[9]
 tmpname = "tmp" + re.search("^.*tmp(.*)$", tmpdir)[1]
 filter = {"tmp": tmpname}
 
 try:
-	create_vids_from_excel(inpfile, sheet_name, tmpdir, story, first_slide, last_slide, voice)
+	create_vids_from_excel(inpfile, sheet_name, tmpdir, story, first_slide, last_slide, voice, user)
 	newvalues = { "$set": { 'status': "Successful" } }
 	result=db.data.update_one(filter, newvalues)
 except Exception as e:

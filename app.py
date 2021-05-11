@@ -1,4 +1,5 @@
 from flask import Flask, render_template, flash, request, redirect, url_for, send_from_directory, session
+import subprocess
 from werkzeug.utils import secure_filename
 from flask_autoindex import AutoIndex
 import tempfile
@@ -13,11 +14,11 @@ from pymongo import MongoClient
 from datetime import datetime
 from flask_assets import Environment, Bundle
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, login_required, current_user, LoginManager
+from flask_login import login_user, login_required, current_user, LoginManager, logout_user
 from flask_sqlalchemy import SQLAlchemy
 
 client = MongoClient("mongodb+srv://Aadi:Aadi4321@vidmaker-cluster.vtdh4.mongodb.net/vidmakerdb?retryWrites=true&w=majority")
-db = client.vidmakerdb
+db = client.testdb
 
 app = Flask(__name__)
 
@@ -44,6 +45,9 @@ assets.register('css_all', css_bundle)
 files_index = AutoIndex(app, os.path.curdir + '/videos', add_url_rules=False)
 gunicorn_logger = logging.getLogger('/home/ubuntu/gunicorn.error')
 app.logger.handlers = gunicorn_logger.handlers
+
+base_dir = os.environ.get('VIDMAKER_MAIN')
+temp_dir = os.environ.get('VIDMAKER_TEMP')
 
 @app.route('/test', methods=["GET", "POST"])
 def test():
@@ -73,12 +77,14 @@ def handson():
 #	return request.args.get('tmp')
 	tmp = request.args.get('tmp')
 	tmpname = re.search("^.*tmp(.*)$", tmp)[1]
-	pe.save_book_as(file_name='{}/input.xlsx'.format(tmp), dest_file_name='/home/ubuntu/sikshana-vidmaker/templates/{}.handsontable.html'.format(tmpname))
+	pe.save_book_as(file_name='{}/input.xlsx'.format(tmp), dest_file_name='{0}/templates/{1}.handsontable.html'.format(base_dir, tmpname))
 	return render_template('{}.handsontable.html'.format(tmpname))
 #	return "Hello World!"
+
 @app.route('/new', methods=["GET", "POST"])
+@login_required
 def new_xl_form():
-	return render_template('xlform.html', page='upload')
+	return render_template('xlform.html', page='upload', user=current_user.name)
 
 @app.route('/new_data', methods=["GET", "POST"])
 def new_vid_data():
@@ -86,7 +92,7 @@ def new_vid_data():
 	file = request.files['file']
 	fileName = secure_filename(file.filename)
 	session['fname'] = file.filename
-	tmpdir = tempfile.mkdtemp(dir="/home/ubuntu/sikshana-temp")
+	tmpdir = tempfile.mkdtemp(dir=temp_dir)
 	os.chmod(tmpdir, 0o777)
 	file.save(os.path.join(tmpdir, 'input.xlsx'))
 	os.chdir(tmpdir)
@@ -111,16 +117,21 @@ def form_submit():
 		last_slide = request.form["sl"]
 		voice = request.form["gender"]
 
+		userid = str(current_user.id)
+
 		story = str(1 if len(request.form.getlist('story')) == 1 else 0)
 
-		if os.path.exists("videos/{}".format(videoName)):
+		if os.path.exists("videos/{0}/{1}".format(userid, videoName)):
 			return render_template('dataform.html', header="Videos with this name already exist", sheets=session['sheets'])
 		else:
 			tmpdir = session['tmpdir']
 			app.logger.error(tmpdir)
-			cmd = './main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) + ' ' + voice.lower() + ' > log.txt' + ' &'
-			app.logger.error(cmd)
-			os.system(cmd)
+			print(os.getcwd())
+#			cmd = './main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) + ' ' + voice.lower() + ' ' + username + ' > log.txt' + ' &'
+#			cmd = '/Users/aadikuchlous/Desktop/programming/sikshana-vidmaker/sikshana-vidmaker/main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) + ' ' + voice.lower() + ' ' + username + ' > log.txt' + ' &'
+
+#			app.logger.error(cmd)
+			subprocess.Popen(args=["./main.py", 'input.xlsx', str(sheetName), str(tmpdir), str(videoName), story, str(first_slide), str(last_slide), voice.lower(), userid], env={"PATH": "./:/usr/bin:/usr/local/bin"})
 			now = datetime.now()
 			dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 			tmpname = "tmp" + re.search("^.*tmp(.*)$", tmpdir)[1]
@@ -129,34 +140,38 @@ def form_submit():
 				'name':videoName,
 				'status':"Processing",
 				'time sent':dt_string,
-				'user':"User"
+				'user': userid
 			}
 			result=db.data.insert_one(entry)
 			story = ("Yes" if story == "1" else "No")
 			return render_template('formsubmit.html', fname=session['fname'], sname=sheetName, fslide=first_slide, lslide=last_slide, vname=videoName, story=story, voice=voice, page='upload')
 
 @app.route('/status/', methods=["GET", "POST"])
+@login_required
 def status():
-	data = db.data.find().sort('_id', -1)
+	data = db.data.find({"user":str(current_user.id)}).sort('_id', -1)
 	return render_template('status_page.html', data = data, page='status')
 
 
 @app.route('/files/')
 @app.route('/files/<path:path>')
+@login_required
 def autoindex(path='.'):
+	if path == '.':
+		path = str(current_user.id)
 	return files_index.render_autoindex(path, template_context = dict(page = 'download', preview = request.args.get('preview')))
 
 @app.route('/delete', methods=["GET", "POST"])
 def delete():
 	# return request.args.get('name'),  os.getcwd(), url_for(request.args.get('name'))
 	name = request.form['name-to-delete']
-	shutil.rmtree(os.path.join(os.getcwd(), 'videos', name))
+	shutil.rmtree(os.path.join(os.getcwd(), 'videos', str(current_user.id), name))
 	return redirect(url_for('autoindex'))
 
 @app.route('/profile')
 @login_required
 def profile():
-        return render_template("profile.html", page="profile", name=current_user.name)
+        return render_template("profile.html", page="profile", user=current_user.name)
 
 @app.route('/login')
 def login():
@@ -175,6 +190,13 @@ def login_post():
         return redirect(url_for('login'))
 
     login_user(user, remember=remember)
+    return redirect(url_for('profile'))
+
+@app.route('/login-guest', methods=['GET', 'POST'])
+def login_guest():
+    password = "guest"
+    user = User.query.filter_by(email="guest@guest").first()
+    login_user(user, remember=True)
     return redirect(url_for('profile'))
 
 @app.route('/signup')
@@ -198,7 +220,15 @@ def signup_post():
     userdb.session.add(new_user)
     userdb.session.commit()
 
+    os.mkdir("videos/{}".format(new_user.id))
+
     return redirect(url_for('login'))
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')

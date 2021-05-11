@@ -69,7 +69,7 @@
   {% if preview=='true' %}
 	<div></div>
   {% else %}
-	{{ macros.navbar(page) }}
+	{{ macros.navbar(page, current_user) }}
 	<br><br><br><br>
   {% endif %}
 <div id="renameModal" class="modal">
