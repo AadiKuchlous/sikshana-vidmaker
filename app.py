@@ -49,13 +49,19 @@ app.logger.handlers = gunicorn_logger.handlers
 base_dir = os.environ.get('VIDMAKER_MAIN')
 temp_dir = os.environ.get('VIDMAKER_TEMP')
 
+
 @app.route('/test', methods=["GET", "POST"])
 def test():
-	return render_template('test.html', page='index')
+	return str(os.environ.get('VIDMAKER_TEMP'))
 
 @app.route('/', methods=["GET", "POST"])
-def index():
-	return render_template('index.html', page='index')
+def landing():
+	return render_template('landing.html')
+
+@app.route('/menu', methods=["GET", "POST"])
+@login_required
+def menu():
+	return render_template('menu.html', page='index')
 
 @app.route('/rename', methods=["GET", "POST"])
 def rename():
@@ -63,6 +69,7 @@ def rename():
 	newname = request.form['new_name']
 	cwd = os.getcwd()
 	os.chdir('videos')
+	os.chdir(str(current_user.id))
 	os.rename(oldname, newname)
 	os.chdir(newname)
 	os.rename(oldname+"-fast.mp4", newname+"-fast.mp4")
@@ -228,7 +235,7 @@ def signup_post():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    return redirect(url_for('menu'))
 
 if __name__ == "__main__":
 	app.run(host='0.0.0.0')
