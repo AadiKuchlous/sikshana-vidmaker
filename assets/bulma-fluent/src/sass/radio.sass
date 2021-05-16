@@ -1,0 +1,62 @@
+.radio
+  user-select: none
+  & > [type="radio"]
+    display: inline-block
+    appearance: none
+    position: relative
+    z-index: 1
+    width: 1.5em
+    height: 1.5em
+    top: 0.25em
+    padding: 0
+    margin: 0
+    visibility: hidden
+    &::before
+      visibility: visible
+      content: ''
+      height: 100%
+      width: 100%
+      position: absolute
+      top: 0
+      left: 0
+      border-radius: 50%
+      background-color: $white
+      border: 2px solid $border
+      transition: all 0.25s ease-out
+    &::after
+      visibility: visible
+      display: none
+      content: ''
+      position: absolute
+      left: 25%
+      top: 25%
+      border-radius: 100%
+      height: 50%
+      width: 50%
+      background-color: $primary
+    &:checked
+      &::before
+        border-color: $primary
+      &::after
+        display: block
+  &:hover
+    & > [type="radio"]:not(:checked)
+      &::before
+        border-color: rgba(0,0,0,0.5)
+  @each $name, $pair in $colors
+    $color: nth($pair, 1)
+    &.is-#{$name}
+      & > [type="radio"]
+        &:checked
+          &::before
+            border-color: $primary
+
+@supports (-ms-ime-align:auto)
+  .radio
+    & > [type="radio"]
+      visibility: visible!important
+
+@media screen and (min-width:0\0)
+  .radio
+    & > [type="radio"]
+      visibility: visible!important
