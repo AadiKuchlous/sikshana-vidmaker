@@ -223,6 +223,7 @@ def show_files(path='.'):
 			"path":ent,
 			"ext":ent.suffix
 		})
+	entries.sort(key=lambda x: x.name)
 	return render_template('files-page.html', entries=entries)
 
 @app.route('/delete', methods=["GET", "POST"])
