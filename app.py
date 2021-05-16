@@ -1,7 +1,6 @@
 from flask import Flask, render_template, flash, request, redirect, url_for, send_from_directory, session
 import subprocess
 from werkzeug.utils import secure_filename
-from flask_autoindex import AutoIndex
 import tempfile
 import openpyxl
 import os
@@ -16,9 +15,11 @@ from flask_assets import Environment, Bundle
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, current_user, LoginManager, logout_user
 from flask_sqlalchemy import SQLAlchemy
+from pathlib import Path
+import time
 
 client = MongoClient("mongodb+srv://Aadi:Aadi4321@vidmaker-cluster.vtdh4.mongodb.net/vidmakerdb?retryWrites=true&w=majority")
-db = client.testdb
+db = client.vidmakerdb
 
 app = Flask(__name__)
 
@@ -42,7 +43,6 @@ assets = Environment(app)
 css_bundle = Bundle('navbar.css', output='packed.css')
 assets.register('css_all', css_bundle)
 
-files_index = AutoIndex(app, os.path.curdir + '/videos', add_url_rules=False)
 gunicorn_logger = logging.getLogger('/home/ubuntu/gunicorn.error')
 app.logger.handlers = gunicorn_logger.handlers
 
@@ -52,7 +52,19 @@ temp_dir = os.environ.get('VIDMAKER_TEMP')
 
 @app.route('/test', methods=["GET", "POST"])
 def test():
-	return str(os.environ.get('VIDMAKER_TEMP'))
+	path = request.args.get('path')
+	if not path:
+		path = "./static/{0}/{1}".format("videos", current_user.id)
+	
+	path_iter = Path("./{}".format(path))
+	
+	if path_iter.suffix == ".mp4":
+		parts = Path(path).parts
+		req_path_parts = parts[1:]
+		path = '/'.join(req_path_parts)
+		return render_template('video-player.html', src=path)
+	
+	return render_template('test.html', entries=[x for x in path_iter.iterdir()])
 
 @app.route('/', methods=["GET", "POST"])
 def landing():
@@ -68,6 +80,7 @@ def rename():
 	oldname = request.form['oldname']
 	newname = request.form['new_name']
 	cwd = os.getcwd()
+	os.chdir('static')
 	os.chdir('videos')
 	os.chdir(str(current_user.id))
 	os.rename(oldname, newname)
@@ -76,7 +89,7 @@ def rename():
 	os.rename(oldname+"-medium.mp4", newname+"-medium.mp4")
 	os.rename(oldname+"-slow.mp4", newname+"-slow.mp4")
 	os.chdir(cwd)
-	return redirect(url_for('autoindex'))
+	return redirect(url_for('show_files'))
 	return "Old Name: " + oldname + "; New Name: " + newname + "; " + os.getcwd()
 
 @app.route('/table', methods=["GET", "POST"])
@@ -96,7 +109,7 @@ def new_xl_form():
 @app.route('/new_data', methods=["GET", "POST"])
 def new_vid_data():
 	homedir = os.getcwd()
-	file = request.files['file']
+	file = request.files['myFile']
 	fileName = secure_filename(file.filename)
 	session['fname'] = file.filename
 	tmpdir = tempfile.mkdtemp(dir=temp_dir)
@@ -156,24 +169,68 @@ def form_submit():
 @app.route('/status/', methods=["GET", "POST"])
 @login_required
 def status():
-	data = db.data.find({"user":str(current_user.id)}).sort('_id', -1)
+#	data = db.data.find({"user":str(current_user.id)}).sort('_id', -1)
+	data = db.data.find({"user":"User"}).sort('_id', -1)
 	return render_template('status_page.html', data = data, page='status')
 
+def folder_size(path):
+	total = 0
+	for entry in path.iterdir():
+		if entry.is_file():
+			total += entry.stat().st_size
+		elif entry.is_dir():
+			total += folder_size(entry)
+	return total
 
+def convert_bytes(num):
+	for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+		if num < 1024.0:
+			return f'{num:.1f} {x}'
+		num /= 1024.0
+
+@app.route('/files')
 @app.route('/files/')
-@app.route('/files/<path:path>')
 @login_required
-def autoindex(path='.'):
-	if path == '.':
-		path = str(current_user.id)
-	return files_index.render_autoindex(path, template_context = dict(page = 'download', preview = request.args.get('preview')))
+def show_files(path='.'):
+	path = request.args.get('path')
+	if not path:
+		path = "./static/{0}/{1}".format("videos", current_user.id)
+	
+	path_iter = Path("./{}".format(path))
+	
+	if path_iter.suffix == ".mp4":
+		parts = Path(path).parts
+		req_path_parts = parts[1:]
+		path = '/'.join(req_path_parts)
+		return render_template('video-player.html', src=path)
+	
+	entries = []
+	
+	for ent in path_iter.iterdir():
+		name = ent.name
+		if ent.is_dir():
+			size = folder_size(ent)
+		else:
+			size = ent.stat().st_size
+		
+		date_time = datetime.fromtimestamp(ent.stat().st_atime)
+
+		entries.append({
+			"name":name,
+			"dt":date_time,
+			"size":convert_bytes(size),
+			"is_dir":ent.is_dir(),
+			"path":ent,
+			"ext":ent.suffix
+		})
+	return render_template('files-page.html', entries=entries)
 
 @app.route('/delete', methods=["GET", "POST"])
 def delete():
 	# return request.args.get('name'),  os.getcwd(), url_for(request.args.get('name'))
 	name = request.form['name-to-delete']
 	shutil.rmtree(os.path.join(os.getcwd(), 'videos', str(current_user.id), name))
-	return redirect(url_for('autoindex'))
+	return redirect(url_for('show_files'))
 
 @app.route('/profile')
 @login_required
@@ -197,14 +254,14 @@ def login_post():
         return redirect(url_for('login'))
 
     login_user(user, remember=remember)
-    return redirect(url_for('profile'))
+    return redirect(url_for('menu'))
 
 @app.route('/login-guest', methods=['GET', 'POST'])
 def login_guest():
     password = "guest"
     user = User.query.filter_by(email="guest@guest").first()
     login_user(user, remember=True)
-    return redirect(url_for('profile'))
+    return redirect(url_for('menu'))
 
 @app.route('/signup')
 def signup():

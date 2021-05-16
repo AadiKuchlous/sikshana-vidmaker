@@ -1,20 +1,48 @@
 {% macro navbar(page, current_user) -%}
-	<ul class="nav">
-            <li class="nav"><a class={{ 'active' if page == 'index' else 'inactive' }} href="{{ url_for('menu') }}">Home</a></li>
-            <li class="nav"><a class={{ 'active' if page == 'upload' else 'inactive' }} href="{{ url_for('new_xl_form') }}">Upload</a></li>
-            <li class="nav"><a class={{ 'active' if page == 'status' else 'inactive' }} href="{{ url_for('status') }}">Status</a></li>
-            <li class="nav"><a class={{ 'active' if page == 'download' else 'inactive' }} href="{{ url_for('autoindex') }}">Downloads</a></li>
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+    <div id="navbarBasicExample" class="navbar-menu">
+    <div class="navbar-start">
+
+        <a class="{{ 'active navbar-item' if page == 'index' else 'inactive navbar-item' }}" href="{{ url_for('menu') }}">Home</a>
+        <a class="{{ 'active navbar-item' if page == 'upload' else 'inactive navbar-item' }}" href="{{ url_for('new_xl_form') }}">Upload</a>
+        <a class="{{ 'active navbar-item' if page == 'status' else 'inactive navbar-item' }}" href="{{ url_for('status') }}">Status</a>
+        <a class="{{ 'active navbar-item' if page == 'download' else 'inactive navbar-item' }}" href="{{ url_for('show_files') }}">Downloads</a>
+    </div>
+    </div>
+
+<div class="navbar-end">
+<div class="navbar-item">
+<div class="buttons">
 
 	{% if current_user.is_authenticated %}
-        <li class="nav" style="float:right"><a class={{ 'active' if page == 'profile' else 'inactive' }} href="{{ url_for('profile') }}">Profile</a></li>
+	<div class="navbar-item has-dropdown is-hoverable">
+	  <a class="navbar-link">
+	    <span class="icon is-medium"><i class="far fa-2x fa-user-circle" style="margin:0px;"></i></span>
+	  </a>
+	
+	  <div class="navbar-dropdown is-right">
+            <a class="navbar-item">
+              Overview
+            </a>
+            <a class="navbar-item">
+              Elements
+            </a>
+            <a class="navbar-item">
+              Components
+            </a>
+            <hr class="navbar-divider">
+            <a class="navbar-item is-warning" href="{{ url_for('logout') }}">
+              Logout
+            </a>
+          </div>
         {% endif %}
 	{% if not current_user.is_authenticated %}
-	<li class="nav" style="float:right"><a class={{ 'active' if page == 'login' else 'inactive' }} href="{{ url_for('login') }}">Login</a></li>
-        <li class="nav" style="float:right"><a class={{ 'active' if page == 'signup' else 'inactive' }} href="{{ url_for('signup') }}">Signup</a></li>
+	<a class="button is-primary" href="{{ url_for('login') }}">Login</a>
+        <a class="button is-dark" href="{{ url_for('signup') }}">Signup</a>
         {% endif %}
-	{% if current_user.is_authenticated %}
-	<li class="nav" style="float:right"><a class={{ 'active' if page == 'logout' else 'inactive' }} href="{{ url_for('logout') }}">Logout</a></li>
-	{% endif %}
-	</ul>
 
+</div>
+</div>
+</div>
+</nav>
 {%- endmacro -%}

@@ -6,17 +6,14 @@
 
 {% block head %}
 
-{% assets "css_all" %}
-    <link rel="stylesheet" href="{{ ASSET_URL }}">
-{% endassets %}
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" />
+<link rel="stylesheet" href="/static/mystyles.css">
+<script src="https://kit.fontawesome.com/7c692875dc.js" crossorigin="anonymous"></script>
 
 {% endblock %}
 </head>
 <body>
     {{ macros.navbar(page, current_user) }}
-</br></br>
-<div id="content">{% block content %}{% endblock %}</div>
+
+<div id="content" style="margin:10px">{% block content %}{% endblock %}</div>
 </body>
 </html>

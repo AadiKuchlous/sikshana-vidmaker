@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+{% import 'macros.html' as macros %}
+
+<head>
+
+    <link rel="stylesheet" href="/static/mystyles.css">
+    <script src="https://kit.fontawesome.com/7c692875dc.js" crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+
+  {% if preview=='true' %}
+        <div></div>
+  {% else %}
+        {{ macros.navbar(page, current_user) }}
+  {% endif %}
+
+<div class="container">
+        <section class="section">
+        <h1 class="title">Status Page</h1>
+        <hr>
+
+    <table class="table is-fullwidth is-hoverable is-striped">
+	<thead>
+	    <tr>
+		<th width="80%">Name</th>
+		<th width="12%">Date and Time Added</th>
+		<th width="8%">Size</th>
+	    </tr>
+	</thead>
+
+	<tbody>
+
+        {% for ent in entries %}
+	    <tr>
+                <td style="vertical-align:middle;">
+		    {% if ent.is_dir %}
+	                <a href='{{ url_for('show_files', path=ent.path) }}'> {{ ent.name }} <a>
+			<img onClick='show_delete_popup("{{ ent.name }}")' src="{{ url_for('static', filename='delete.png') }}" width="25px" style="float:right; margin-left: 12px;">
+                        <img onClick='show_rename_popup("{{ ent.name }}")' src="{{ url_for('static', filename='pencil-square.svg') }}" width="25px" style="float:right;"></button>
+		    {% endif %}
+		    {% if ent.ext == ".mp4" %}
+			<a href="javascript:show_video('{{ ent.path }}')"> {{ ent.name }} </a>
+		    {% endif %}
+	    	</td>
+	        <td> {{ ent.dt }} </td>
+		<td> {{ ent.size }} </td>
+            </tr>
+	    </a>
+        {% endfor %}
+
+	</tbody>
+    </table>
+
+</section>
+</div>
+
+<div id="renameModal" class="modal">
+
+  <div class="modal-background"></div>
+  <div class="modal-card">
+        <header class="modal-card-head">
+          <h2 class="modal-card-title">Change Video Name</h2>
+        </header>
+	<section class="modal-card-body">
+        <p>Old Video Name: <div id="OldName">'Name Goes Here'</div></p>
+	</section>
+        <form id="renameForm" enctype="multipart/form-data" method="POST" action="{{ url_for('rename') }}">
+                <input type="hidden" id="oldname" name="oldname" value="">
+		<section class="modal-card-body">
+                <label for="new_name">New Video Name</label><br>
+                <input type="text" id="new_name" name="new_name" value="" required><br><br>
+		</section>
+
+		<section class="modal-card-foot">
+                <input class="button is-primary" type="submit" id="renameSubmit" value="Change Name">
+		</section>
+        </form>
+  </div>
+  <button class="modal-close is-large" aria-label="close"></button>
+
+</div>
+
+
+<div id="deleteModal" class="modal">
+
+  <div class="modal-background"></div>
+  <div class="modal-card">
+        <header class="modal-card-head">
+          <h2 class="modal-card-title">Delete Videos</h2>
+        </header>
+	<section class="modal-card-body">
+        <p>You wish to delete videos with the name: <div id="name-displayed-to-delete">'Name Goes Here'</div></p>
+        <p>This action is permanent. Deleted Items cannot be restored. Do you wish to proceed with this action?</p>
+	</section>
+	<section class="modal-card-foot">
+	<form id="renameForm" enctype="multipart/form-data" method="POST" action="{{ url_for('delete') }}">
+                <input type="hidden" id="name-to-delete" name="name-to-delete" value="">
+                <input class="button is-danger" type="submit" id="renameSubmit" value="Delete">
+        </form>
+	</section>
+  </div>
+  <button class="modal-close is-large" aria-label="close"></button>
+
+</div>
+
+
+<div id="videoModal" class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-content" style="width:1280px; height:720px">
+      <video id="vid_area" style="width:1280px; height:720px"  class="level-item" controls>
+          
+      </video>
+  </div>
+  <button class="modal-close is-large" aria-label="close"></button>
+</div>
+
+
+<script>
+// Get the modal
+var renamemodal = document.getElementById("renameModal");
+var deletemodal = document.getElementById("deleteModal");
+var videomodal = document.getElementById("videoModal");
+
+var video_area = document.getElementById("vid_area");
+
+var videoName = document.getElementById("OldName");
+var videoName_to_remove = document.getElementById("name-displayed-to-delete");
+// Get the button that opens the modal
+var btn = document.getElementsByClassName("renameBtn");
+var videoname_form = document.getElementById("oldname");
+var videoname_form_delete = document.getElementById("name-to-delete");
+
+
+// Get the <span> element that closes the modal
+var renameclose = document.getElementsByClassName("modal-close")[0];
+var deleteclose = document.getElementsByClassName("modal-close")[1];
+var videoclose = document.getElementsByClassName("modal-close")[2];
+
+// When the user clicks on the button, open the modal
+function show_rename_popup(name) {
+  renamemodal.classList.add('is-active');
+  videoName.innerText = name;
+  videoname_form.value = name;
+}
+
+function show_delete_popup(name) {
+  deletemodal.classList.add('is-active');
+  videoName_to_remove.innerText = name;
+  videoname_form_delete.value = name;
+}
+
+function show_video(src) {
+  video_area.innerHTML = '';
+  videomodal.classList.add('is-active');
+  var video_source = document.createElement("source")
+  video_source.src = "/"+src;
+  video_area.appendChild(video_source);
+}
+
+// When the user clicks on <span> (x), close the modal
+
+renameclose.onclick = function() {
+  renamemodal.classList.remove('is-active');
+}
+
+deleteclose.onclick = function() {
+  deletemodal.classList.remove('is-active');
+}
+
+videoclose.onclick = function() {
+  videomodal.classList.remove('is-active');
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+  if (event.target == renamemodal) {
+    renamemodal.style.display = "none";
+    deletemodal.style.display = "none";
+  }
+}
+</script>
+    
+</body>

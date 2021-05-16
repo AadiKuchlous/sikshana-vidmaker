@@ -4,8 +4,20 @@
 	<title>Submitted</title>
 {% endblock %}
 {% block content %}
+<div class="container">
+        <section class="section">
+
+        <h1 class="title">
+          Video Details
+        </h1>
+
+        <hr>
+
+        <div class="column is-8 is-offset-2">
+	
+	<div class="box form-box">
 	<p>A video is being made with the following details:</p>
-	<ul>
+	<ul style="list-style: disc; padding: revert;">
 		<li>File name: {{fname}}</li>
 		<li>Sheet name: {{sname}}</li>
 		<li>First page row: {{fslide}}</li>
@@ -14,8 +26,15 @@
 		<li>Story: {{story}}</li>
 		<li>Voice: {{voice}}</li>
 	</ul>
+<br>
 <p>The videos will show up shortly on the following page for you to view and download:</p>
-<button type="button" onclick="window.location.href='/files'">Download page</button>
+<button class="button is-link" type="button" onclick="window.location.href='/files'">Download page</button>
+<br>
 <p>You can view the status of your video on the following page:</p>
-<button type="button" onclick="window.location.href='/status'">Status page</button>
+<button class="button is-link" type="button" onclick="window.location.href='/status'">Status page</button>
+
+</div>
+</div>
+</section>
+</div>
 {% endblock %}

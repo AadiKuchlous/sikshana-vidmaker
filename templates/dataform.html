@@ -1,42 +1,98 @@
 {% extends 'base.html' %}
 {% block content %}
-	<h2>{{header}}</h2>
-	<form enctype="multipart/form-data" method="POST" action="/form_submit">
+	<div class="container">
+	<section class="section">
+	
+	<h1 class="title">
+          Enter Video Information
+	</h1>
 
-		<label for="sheetName">Excel Sheet: </label>
-		<select id="sheetName" name="sheetName">
+	<hr>
+
+	<div class="column is-8 is-offset-2">
+	<h2>{{header}}</h2>
+
+	<div class="box form-box">
+
+	<form enctype="multipart/form-data" method="POST" action="/form_submit">
+		<div class="field">
+		<label class="label" for="sheetName">Excel Sheet: </label>
+		<div class="control">
+		<div class="select">
+		<select  id="sheetName" name="sheetName">
 			{% for sheet in sheets %}
 				<option value="{{ sheet }}">{{ sheet }}</option>
 			{% endfor %}
 		</select>
-		<br><br>
+		</div>
+		</div>
+		</div>
 
-		<label for="lname">Row Number of First Slide:</label><br>
-		<input type="number" id="s1" name="s1" value="" required><br><br>
+		<div class="field">
+		<label class="label" for="lname">Row Number of First Slide:</label>
+		<input class="input" type="number" id="s1" name="s1" value="" required>
+		</div>
 
-		<label for="lname">Row Number of Last Slide:</label><br>
-		<input type="number" id="sl" name="sl" value="" required><br><br>
+		<div class="field">
+		<label for="lname" class="label">Row Number of Last Slide:</label>
+		<input class="input" type="number" id="sl" name="sl" value="" required>
+		</div>
 
-		<label for="lname">Video name:</label><br>
-		<input type="text" id="name" name="name" value="" required><br><br>
+		<div class="field">
+		<label for="lname" class="label">Video name:</label>
+		<input class="input" type="text" id="name" name="name" value="" required>
+		</div>
 
+		<div class="field">
+		<label class="checkbox">
 		<input type="checkbox" id="story" name="story">
-		<label for="story"> Story</label><br><br>
+		Story	
+		</label>
+		</div>
+
+		<div class="field">
+		<div class="control">
+		<label class="label" for="Voice">
+		Select the Voice:
+		</label>
 		
-		Select the Voice: <br>
+		<label class="radio">
 		<input type="radio" id="male" name="gender" value="male" checked="checked">
-  		<label for="male">Male</label><br>
-  		<input type="radio" id="female" name="gender" value="female">
-  		<label for="female">Female</label><br><br>
+  		Male
+		</label>
+  		
+		<label class="radio">
+		<input type="radio" id="female" name="gender" value="female">
+  		Female
+		</label>
 		
-		<input type="submit" value="Submit">
+		</div>
+		</div>
+		
+		<div class="field">
+		<div class="control">
+		<input class="button is-primary" type="submit" value="Submit">
+		</div>
+		</div>
+	
 	</form>
-
+	</div>
+</div>
 <br><br>
-<button onclick="settableURL()">View Table</button>
-<button onclick="setfileURL()">View Files</button>
-<iframe id="iframe" src="" style="display:none" width="100%" height="500px"></iframe>
 
+<div class="container">
+<section class="section">
+<div class="tabs is-centered">
+  <ul>
+    <li onclick="settableURL()" id="excel_tab"><a>View Your Excel Sheet</a></li>
+    <li onclick="setfileURL()" id="files_tab"><a>View Files</a></li>
+  </ul>
+</div>
+</section>
+</div>
+<iframe id="iframe" src="" style="display:none" width="100%" height="500px"></iframe>
+</section>
+</div>
 {% endblock %}
 
 {% block head %}
@@ -45,10 +101,14 @@
 	  function settableURL(){
 	    document.getElementById('iframe').src = "{{ url_for('handson', tmp=tmp) }}";
 	    document.getElementById('iframe').style.display = "block";
+	    document.getElementById('excel_tab').classList.add("is-active")
+	    document.getElementById('files_tab').classList.remove("is-active")
 	  }
 	  function setfileURL(){
 	    document.getElementById('iframe').src = "{{ url_for('autoindex', preview='true') }}";
 	    document.getElementById('iframe').style.display = "block";
+	    document.getElementById('files_tab').classList.add("is-active")
+            document.getElementById('excel_tab').classList.remove("is-active")
 	  }
 	</script>
 {% endblock %}

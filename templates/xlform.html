@@ -1,11 +1,58 @@
 {% extends 'base.html' %}
-{% block content %}
-	<h2>Upload the Excel Sheet {{ user }}</h2>
 
-	<form enctype="multipart/form-data" method="POST" action="/new_data">
-		<label for="fname"></label><br>
-		<input type="file" id="file" name="file" value="" required><br><br>
-		<input type="submit" value="Submit">
-	</form>
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="./static/css/dropbox.css">
 {% endblock %}
 
+{% block content %}
+
+<div class="container">
+<section class="section">
+
+<h1 class="title">
+      Upload Excel Sheet
+</h1>
+
+<hr>
+
+<div class="column is-8 is-offset-2">
+
+<div class="box form-box">
+<form class="" enctype="multipart/form-data" method="POST" action="/new_data">
+
+<div class="field">
+<div class="drop-zone">
+    <span class="drop-zone__prompt"><i class="fas fa-upload fa-2x"></i><br>Drop file here or click to upload</span>
+    <input class="drop-zone__input" type="file" name="myFile" id="file-input" accept=".xlsx" required="">
+    <div class="drop-zone__thumb" style="display:none">
+	<img height="130px" data-label="Example.xlsx" src="../static/excel-logo.png"></img>
+</div>
+</div>
+</div>
+
+<div id="submit_area" class="field is-grouped">
+	<div class="control">
+		<input type="submit" value="Next" class="button is-primary">
+	</div>
+</div>
+
+</form>
+</div>
+</div>
+</section>
+</div>
+
+<script>
+//  var file_input = document.getElementById('file-input');
+//  
+//  function changeLabelText() {
+//    var file_name = document.getElementById('file-name');
+//    file_name.innerHTML = file_input.files[0].name;
+//  }
+
+//file_input.addEventListener('change',changeLabelText,false);
+</script>
+
+<script src="./static/js/dropbox.js"></script>
+{% endblock %}

@@ -10,19 +10,19 @@
     }
 
     .Processing {
-      background-color: yellow;
+      background-color: #fff566;
     }
 
     .Failed {
-      background-color: red;
+      background-color: #F95252;
     }
 
     .Successful {       
-      background-color: green;
+      background-color: #95de64;
     }
     </style>
 <script>
-    window.setInterval('refresh()', 5000); 	
+//    window.setInterval('refresh()', 5000); 	
     // Call a function every 10000 milliseconds 
     // (OR 10 seconds).
 
@@ -33,27 +33,37 @@
 </script>
 {% endblock %}
 {% block content %}
-        <h2>Status Page</h2>
-	<table>
-	<tr>
-		<th>Name of Video</th>
-		<th>Date and Time of Upload</th>
-		<th>Status</th>
-	</tr>
+	<div class="container">
+	<section class="section">
+        <h1 class="title">Status Page</h1>
+	<hr>
+	<div class="column is-8 is-offset-2">
+	<table class="table is-fullwidth" style="border-collapse: separate; border-spacing: 0 6px;">
+	  <thead>
+	    <tr>
+	      <th>Name of Video</th>
+	      <th>Date and Time of Upload</th>
+	      <th>Status</th>
+    	    </tr>
+  	</thead>
+	
 	{% for entry in data %}
- 	  <tr class={{ entry['status'] }}>
-		<td>
-		  {{ entry['name'] }}
-		</td>
-		<td>
+	    <tr class="{{ entry['status'] }}">
+                <td>
+                  {{ entry['name'] }}
+                </td>
+                <td>
                   {{ entry['time sent'] }}
                 </td>
-		<td>
+                <td>
                   {{ entry['status'] }}
                 </td>
-	  </tr>
-	{% endfor %}
+          </tr>
+        {% endfor %}
 	</table>
+	</div>
+	</section>
+	</div>
 {% endblock %}
 
 
