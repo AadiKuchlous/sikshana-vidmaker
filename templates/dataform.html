@@ -105,7 +105,7 @@
 	    document.getElementById('files_tab').classList.remove("is-active")
 	  }
 	  function setfileURL(){
-	    document.getElementById('iframe').src = "{{ url_for('autoindex', preview='true') }}";
+	    document.getElementById('iframe').src = "{{ url_for('show_files', preview='true') }}";
 	    document.getElementById('iframe').style.display = "block";
 	    document.getElementById('files_tab').classList.add("is-active")
             document.getElementById('excel_tab').classList.remove("is-active")
