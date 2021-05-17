@@ -21,18 +21,17 @@
 	  </a>
 	
 	  <div class="navbar-dropdown is-right">
-            <a class="navbar-item">
-              Overview
+            <a style="display:block" class="navbar-item" href="{{ url_for('profile') }}">
+              <span style=""> Signed in as </span>
+	      </br>
+	      <span style="display:inline-block; font-weight:bold"> {{ current_user.name }} </span>
             </a>
-            <a class="navbar-item">
-              Elements
-            </a>
-            <a class="navbar-item">
-              Components
+            <a class="navbar-item" href="{{ url_for('profile') }}">
+              Profile
             </a>
             <hr class="navbar-divider">
             <a class="navbar-item is-warning" href="{{ url_for('logout') }}">
-              Logout
+              Sign out
             </a>
           </div>
         {% endif %}

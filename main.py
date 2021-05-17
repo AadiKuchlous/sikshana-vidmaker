@@ -13,7 +13,7 @@ import requests
 from pymongo import MongoClient
 
 client = MongoClient("mongodb+srv://Aadi:Aadi4321@vidmaker-cluster.vtdh4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
-db=client.testdb
+db=client.vidmakerdb
 
 def google_tts(text, speed=1):
 	print(text)

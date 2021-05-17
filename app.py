@@ -170,7 +170,7 @@ def form_submit():
 @login_required
 def status():
 #	data = db.data.find({"user":str(current_user.id)}).sort('_id', -1)
-	data = db.data.find({"user":"User"}).sort('_id', -1)
+	data = db.data.find({"user":str(current_user.id)}).sort('_id', -1)
 	return render_template('status_page.html', data = data, page='status')
 
 def folder_size(path):
@@ -224,13 +224,13 @@ def show_files(path='.'):
 			"ext":ent.suffix
 		})
 	entries.sort(key=lambda x: x['name'])
-	return render_template('files-page.html', entries=entries)
+	return render_template('files-page.html', entries=entries, preview=request.args.get('preview'))
 
 @app.route('/delete', methods=["GET", "POST"])
 def delete():
 	# return request.args.get('name'),  os.getcwd(), url_for(request.args.get('name'))
 	name = request.form['name-to-delete']
-	shutil.rmtree(os.path.join(os.getcwd(), 'videos', str(current_user.id), name))
+	shutil.rmtree(os.path.join(os.getcwd(), 'static', 'videos', str(current_user.id), name))
 	return redirect(url_for('show_files'))
 
 @app.route('/profile')

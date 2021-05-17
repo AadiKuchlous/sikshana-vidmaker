@@ -19,8 +19,10 @@
 
 <div class="container">
         <section class="section">
-        <h1 class="title">Status Page</h1>
+	{% if preview != 'true' %}
+        <h1 class="title">Files Page</h1>
         <hr>
+	{% endif %}
 
     <table class="table is-fullwidth is-hoverable is-striped">
 	<thead>
