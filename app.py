@@ -169,7 +169,6 @@ def form_submit():
 @app.route('/status/', methods=["GET", "POST"])
 @login_required
 def status():
-#	data = db.data.find({"user":str(current_user.id)}).sort('_id', -1)
 	data = db.data.find({"user":str(current_user.id)}).sort('_id', -1)
 	return render_template('status_page.html', data = data, page='status')
 
@@ -229,8 +228,8 @@ def show_files(path='.'):
 @app.route('/delete', methods=["GET", "POST"])
 def delete():
 	# return request.args.get('name'),  os.getcwd(), url_for(request.args.get('name'))
-	name = request.form['name-to-delete']
-	shutil.rmtree(os.path.join(os.getcwd(), 'static', 'videos', str(current_user.id), name))
+	path = request.form['path-to-delete']
+	shutil.rmtree(os.path.join(os.garcwd(), path))
 	return redirect(url_for('show_files'))
 
 @app.route('/profile')
@@ -285,7 +284,8 @@ def signup_post():
     userdb.session.add(new_user)
     userdb.session.commit()
 
-    os.mkdir("videos/{}".format(new_user.id))
+    os.mkdir("videos/{}/Stories".format(new_user.id))
+    os.mkdir(os.path.join("videos/{}".format(new_user.id), "Other Videos"))
 
     return redirect(url_for('login'))
 

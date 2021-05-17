@@ -40,8 +40,10 @@
                 <td style="vertical-align:middle;">
 		    {% if ent.is_dir %}
 	                <a href='{{ url_for('show_files', path=ent.path) }}'> {{ ent.name }} <a>
-			<img onClick='show_delete_popup("{{ ent.name }}")' src="{{ url_for('static', filename='delete.png') }}" width="25px" style="float:right; margin-left: 12px;">
-                        <img onClick='show_rename_popup("{{ ent.name }}")' src="{{ url_for('static', filename='pencil-square.svg') }}" width="25px" style="float:right;"></button>
+			{% if ent.name != "Stories" and ent.name != "Other Videos" %}
+			    <img onClick='show_delete_popup("{{ ent.name }}", "{{ ent.path }}")' src="{{ url_for('static', filename='delete.png') }}" width="25px" style="float:right; margin-left: 12px;">
+                            <img onClick='show_rename_popup("{{ ent.name }}", "{{ ent.path }}")' src="{{ url_for('static', filename='pencil-square.svg') }}" width="25px" style="float:right;">
+			{% endif %}
 		    {% endif %}
 		    {% if ent.ext == ".mp4" %}
 			<a href="javascript:show_video('{{ ent.path }}')"> {{ ent.name }} </a>
@@ -71,6 +73,7 @@
 	</section>
         <form id="renameForm" enctype="multipart/form-data" method="POST" action="{{ url_for('rename') }}">
                 <input type="hidden" id="oldname" name="oldname" value="">
+		<input type="hidden" id="path-rename" name="path-rename" value="">
 		<section class="modal-card-body">
                 <label for="new_name">New Video Name</label><br>
                 <input type="text" id="new_name" name="new_name" value="" required><br><br>
@@ -100,6 +103,7 @@
 	<section class="modal-card-foot">
 	<form id="renameForm" enctype="multipart/form-data" method="POST" action="{{ url_for('delete') }}">
                 <input type="hidden" id="name-to-delete" name="name-to-delete" value="">
+		<input type="hidden" id="delete_path" name="delete_path" value="">
                 <input class="button is-danger" type="submit" id="renameSubmit" value="Delete">
         </form>
 	</section>
@@ -129,7 +133,9 @@ var videomodal = document.getElementById("videoModal");
 var video_area = document.getElementById("vid_area");
 
 var videoName = document.getElementById("OldName");
+var rename_path = document.getElementById("path-rename");
 var videoName_to_remove = document.getElementById("name-displayed-to-delete");
+var delete_path = document.getElementById("delete_path")
 // Get the button that opens the modal
 var btn = document.getElementsByClassName("renameBtn");
 var videoname_form = document.getElementById("oldname");
@@ -142,16 +148,18 @@ var deleteclose = document.getElementsByClassName("modal-close")[1];
 var videoclose = document.getElementsByClassName("modal-close")[2];
 
 // When the user clicks on the button, open the modal
-function show_rename_popup(name) {
+function show_rename_popup(name, path) {
   renamemodal.classList.add('is-active');
   videoName.innerText = name;
   videoname_form.value = name;
+  rename_path.value = path;
 }
 
-function show_delete_popup(name) {
+function show_delete_popup(name, path) {
   deletemodal.classList.add('is-active');
   videoName_to_remove.innerText = name;
   videoname_form_delete.value = name;
+  delete_path.valuer = path;
 }
 
 function show_video(src) {

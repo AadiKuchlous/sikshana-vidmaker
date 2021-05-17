@@ -354,6 +354,10 @@ def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slid
 		split_videos.append("vid{}-split.mp4".format(str(i-start+1)))
 
 	os.chdir(os.path.join(mdir, 'static', 'videos', user))
+	if story=='1':
+		os.chdir("Stories")
+	else:
+		os.chdir("Other Videos")
 	os.mkdir(output_name)
 	print(output_name)
 	os.chdir(os.path.join(os.getcwd(), output_name))
