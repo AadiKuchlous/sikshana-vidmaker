@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, request, redirect, url_for, send_from_directory, session
+from flask import Flask, render_template, flash, request, redirect, url_for, send_from_directory, session, send_file
 import subprocess
 from werkzeug.utils import secure_filename
 import tempfile
@@ -29,6 +29,8 @@ userdb = SQLAlchemy()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 userdb.init_app(app)
 
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
 from user_model import User
 
 login_manager = LoginManager()
@@ -55,15 +57,15 @@ def test():
 	path = request.args.get('path')
 	if not path:
 		path = "./static/{0}/{1}".format("videos", current_user.id)
-	
+
 	path_iter = Path("./{}".format(path))
-	
+
 	if path_iter.suffix == ".mp4":
 		parts = Path(path).parts
 		req_path_parts = parts[1:]
 		path = '/'.join(req_path_parts)
 		return render_template('video-player.html', src=path)
-	
+
 	return render_template('test.html', entries=[x for x in path_iter.iterdir()])
 
 @app.route('/', methods=["GET", "POST"])
@@ -79,18 +81,17 @@ def menu():
 def rename():
 	oldname = request.form['oldname']
 	newname = request.form['new_name']
+	path = request.form["path-rename"]
 	cwd = os.getcwd()
-	os.chdir('static')
-	os.chdir('videos')
-	os.chdir(str(current_user.id))
+	path_to = '/'.join(path.split('/')[0:-1])
+	os.chdir(path_to)
 	os.rename(oldname, newname)
 	os.chdir(newname)
 	os.rename(oldname+"-fast.mp4", newname+"-fast.mp4")
 	os.rename(oldname+"-medium.mp4", newname+"-medium.mp4")
 	os.rename(oldname+"-slow.mp4", newname+"-slow.mp4")
 	os.chdir(cwd)
-	return redirect(url_for('show_files'))
-	return "Old Name: " + oldname + "; New Name: " + newname + "; " + os.getcwd()
+	return redirect(url_for('show_files', path=path_to))
 
 @app.route('/table', methods=["GET", "POST"])
 def handson():
@@ -194,24 +195,24 @@ def show_files(path='.'):
 	path = request.args.get('path')
 	if not path:
 		path = "./static/{0}/{1}".format("videos", current_user.id)
-	
+
 	path_iter = Path("./{}".format(path))
-	
+
 	if path_iter.suffix == ".mp4":
 		parts = Path(path).parts
 		req_path_parts = parts[1:]
 		path = '/'.join(req_path_parts)
 		return render_template('video-player.html', src=path)
-	
+
 	entries = []
-	
+	print(path_iter)
 	for ent in path_iter.iterdir():
 		name = ent.name
 		if ent.is_dir():
 			size = folder_size(ent)
 		else:
 			size = ent.stat().st_size
-		
+
 		date_time = datetime.fromtimestamp(ent.stat().st_atime)
 
 		entries.append({
@@ -225,12 +226,23 @@ def show_files(path='.'):
 	entries.sort(key=lambda x: x['name'])
 	return render_template('files-page.html', entries=entries, preview=request.args.get('preview'))
 
+@app.route('/download')
+def download():
+	path = request.args.get('path')
+
+	if Path("./{}".format(path)).suffix == ".mp4":
+		return send_file(path, as_attachment=True)
+	else:
+		shutil.make_archive(path, 'zip', path)
+		zip_file = path+".zip"
+		return send_file(zip_file, as_attachment=True)
+
 @app.route('/delete', methods=["GET", "POST"])
 def delete():
 	# return request.args.get('name'),  os.getcwd(), url_for(request.args.get('name'))
-	path = request.form['path-to-delete']
-	shutil.rmtree(os.path.join(os.garcwd(), path))
-	return redirect(url_for('show_files'))
+	path = request.form['delete_path']
+	shutil.rmtree(os.path.join(os.getcwd(), path))
+	return redirect(url_for('show_files', path='/'.join(path.split('/')[0:-1])))
 
 @app.route('/profile')
 @login_required

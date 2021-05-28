@@ -311,6 +311,9 @@ def process_json_data(data, voice):
 		for l in data.iter_lines():
 			time = int(l.decode().split(",")[0][8:])/(1000)
 			time_data.append(time)
+		print("time data", time_data)
+		time_data = time_data[1:]
+		print("time data", time_data)
 	if voice == "male":
 		for m in data:
 			time_data.append(m["timeSeconds"])
@@ -387,6 +390,7 @@ try:
 	result=db.data.update_one(filter, newvalues)
 except Exception as e:
 	print(e)
+	print(db.data.find_one(filter))
 	newvalues = { "$set": { 'status': "Failed" } }
 	result=db.data.update_one(filter, newvalues)
 

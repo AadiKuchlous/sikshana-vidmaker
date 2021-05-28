@@ -5,7 +5,7 @@
 <head>
 
     <link rel="stylesheet" href="/static/mystyles.css">
-    <script src="https://kit.fontawesome.com/7c692875dc.js" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/5d8ee03416.js" crossorigin="anonymous"></script>
 
 </head>
 
@@ -36,23 +36,31 @@
 	<tbody>
 
         {% for ent in entries %}
+	{% if not ent.ext == ".zip" %}
 	    <tr>
                 <td style="vertical-align:middle;">
+		    <a href='{{ url_for('download', path=ent.path) }}' style="color:#4a4a4a">
+			<span class="icon is-medium">
+			<i class="fas fa-download fa-lg"></i>
+			</span>
+		    </a>
+
 		    {% if ent.is_dir %}
-	                <a href='{{ url_for('show_files', path=ent.path) }}'> {{ ent.name }} <a>
+	                <a href='{{ url_for('show_files', path=ent.path) }}'> {{ ent.name }} </a>
 			{% if ent.name != "Stories" and ent.name != "Other Videos" %}
 			    <img onClick='show_delete_popup("{{ ent.name }}", "{{ ent.path }}")' src="{{ url_for('static', filename='delete.png') }}" width="25px" style="float:right; margin-left: 12px;">
                             <img onClick='show_rename_popup("{{ ent.name }}", "{{ ent.path }}")' src="{{ url_for('static', filename='pencil-square.svg') }}" width="25px" style="float:right;">
 			{% endif %}
 		    {% endif %}
 		    {% if ent.ext == ".mp4" %}
-			<a href="javascript:show_video('{{ ent.path }}')"> {{ ent.name }} </a>
+			<a href='javascript:show_video("{{ ent.path }}")'> {{ ent.name }} </a>
 		    {% endif %}
 	    	</td>
 	        <td> {{ ent.dt }} </td>
 		<td> {{ ent.size }} </td>
             </tr>
 	    </a>
+	{% endif %}
         {% endfor %}
 
 	</tbody>
@@ -101,10 +109,10 @@
         <p>This action is permanent. Deleted Items cannot be restored. Do you wish to proceed with this action?</p>
 	</section>
 	<section class="modal-card-foot">
-	<form id="renameForm" enctype="multipart/form-data" method="POST" action="{{ url_for('delete') }}">
+	<form id="deleteForm" enctype="multipart/form-data" method="POST" action="{{ url_for('delete') }}">
                 <input type="hidden" id="name-to-delete" name="name-to-delete" value="">
 		<input type="hidden" id="delete_path" name="delete_path" value="">
-                <input class="button is-danger" type="submit" id="renameSubmit" value="Delete">
+                <input class="button is-danger" type="submit" id="deleteSubmit" value="Delete">
         </form>
 	</section>
   </div>
@@ -159,15 +167,17 @@ function show_delete_popup(name, path) {
   deletemodal.classList.add('is-active');
   videoName_to_remove.innerText = name;
   videoname_form_delete.value = name;
-  delete_path.valuer = path;
+  delete_path.value = path;
 }
 
 function show_video(src) {
   video_area.innerHTML = '';
+  video_area.currentTime = 0;
   videomodal.classList.add('is-active');
   var video_source = document.createElement("source")
   video_source.src = "/"+src;
   video_area.appendChild(video_source);
+  video_area.load();
 }
 
 // When the user clicks on <span> (x), close the modal
@@ -182,6 +192,9 @@ deleteclose.onclick = function() {
 
 videoclose.onclick = function() {
   videomodal.classList.remove('is-active');
+  video_area.pause();
+  video_area.innerHTML = "";
+  video_area.currentTime = 0;
 }
 
 // When the user clicks anywhere outside of the modal, close it

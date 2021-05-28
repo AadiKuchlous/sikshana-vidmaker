@@ -11,7 +11,7 @@
 <section class="section">
 
 <h1 class="title">
-      Upload Excel Sheet
+      Upload Excel Sheet or PDF
 </h1>
 
 <hr>
@@ -24,7 +24,7 @@
 <div class="field">
 <div class="drop-zone">
     <span class="drop-zone__prompt"><i class="fas fa-upload fa-2x"></i><br>Drop file here or click to upload</span>
-    <input class="drop-zone__input" type="file" name="myFile" id="file-input" accept=".xlsx" required="">
+    <input class="drop-zone__input" type="file" name="myFile" id="file-input" accept=".xlsx,.pdf" required="">
     <div class="drop-zone__thumb" style="display:none">
 	<img height="130px" data-label="Example.xlsx" src="../static/excel-logo.png"></img>
 </div>
@@ -42,6 +42,7 @@
 </div>
 </section>
 </div>
+
 
 <script>
 //  var file_input = document.getElementById('file-input');
