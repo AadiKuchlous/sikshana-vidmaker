@@ -148,10 +148,6 @@ def form_submit():
 			tmpdir = session['tmpdir']
 			app.logger.error(tmpdir)
 			print(os.getcwd())
-#			cmd = './main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) + ' ' + voice.lower() + ' ' + username + ' > log.txt' + ' &'
-#			cmd = '/Users/aadikuchlous/Desktop/programming/sikshana-vidmaker/sikshana-vidmaker/main.py' + ' ' + 'input.xlsx' + ' ' + '"{}"'.format(str(sheetName)) + ' ' + '"{}"'.format(str(tmpdir)) + ' ' + '"{}"'.format(str(videoName)) + ' ' + story + ' ' + str(first_slide) + ' ' + str(last_slide) + ' ' + voice.lower() + ' ' + username + ' > log.txt' + ' &'
-
-#			app.logger.error(cmd)
 			subprocess.Popen(args=["./main.py", 'input.xlsx', str(sheetName), str(tmpdir), str(videoName), story, str(first_slide), str(last_slide), voice.lower(), userid], env={"PATH": "./:/usr/bin:/usr/local/bin"})
 			now = datetime.now()
 			dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -215,13 +211,20 @@ def show_files(path='.'):
 
 		date_time = datetime.fromtimestamp(ent.stat().st_atime)
 
+		parts = ent.parts
+
+		if parts[-2] == str(current_user.id):
+			parent = ""
+		else:
+			parent = ent.parents[1]
 		entries.append({
 			"name":name,
 			"dt":date_time,
 			"size":convert_bytes(size),
 			"is_dir":ent.is_dir(),
 			"path":ent,
-			"ext":ent.suffix
+			"ext":ent.suffix,
+			"parent":parent
 		})
 	entries.sort(key=lambda x: x['name'])
 	return render_template('files-page.html', entries=entries, preview=request.args.get('preview'))

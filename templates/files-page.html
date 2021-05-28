@@ -23,7 +23,12 @@
         <h1 class="title">Files Page</h1>
         <hr>
 	{% endif %}
-
+    {% if not entries[0].parent == "" %}
+	<a href='{{ url_for('show_files', path=entries[0].parent) }}'>
+	    <i class="fas fa-arrow-left"></i>
+	<a>
+    {% endif %}
+    <div class="column is-10 is-offset-1">
     <table class="table is-fullwidth is-hoverable is-striped">
 	<thead>
 	    <tr>
@@ -65,7 +70,7 @@
 
 	</tbody>
     </table>
-
+    </div>
 </section>
 </div>
 
