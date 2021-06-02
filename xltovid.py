@@ -9,7 +9,7 @@ import shutil
 import re
 import subprocess as sub
 import requests
-from utils import concatenate_videos, read_excel, mongo_client
+from utils import concatenate_videos, read_excel, mongo_client, underline_html
 
 print(sys.path)
 
@@ -68,9 +68,6 @@ def polly_json(text):
 	json_data = aws_polly(text, "json")
 	return(json_data)
 
-
-def underline_html(text):
-	return text.replace("._", "<u>").replace("_.", "</u>")
 
 def create_images(text, image, story=False):
 	story = True if story=='1' else False

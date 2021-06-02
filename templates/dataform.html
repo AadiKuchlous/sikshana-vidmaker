@@ -57,16 +57,40 @@
 		</label>
 		
 		<label class="radio">
-		<input type="radio" id="male" name="gender" value="male" checked="checked">
+		<input type="radio" id="male" name="voice" value="male" checked="checked" onclick="if(this.checked){no_upload()}">
   		Male
 		</label>
   		
 		<label class="radio">
-		<input type="radio" id="female" name="gender" value="female">
+		<input type="radio" id="female" name="voice" value="female" onclick="if(this.checked){no_upload()}">
   		Female
 		</label>
-		
+
+		<label class="radio">
+                <input type="radio" id="upload" name="voice" value="upload" onclick="if(this.checked){upload_own()}">
+                Upload my own audio
+                </label>
+
 		</div>
+		</div>
+
+		<div class="field" style="display:none" id="upload_field">
+		    <div class="file has-name" id="audio_div">
+		      <label class="file-label">
+		        <input class="file-input" type="file" name="audio" accept="audio/*">
+		        <span class="file-cta">
+		          <span class="file-icon">
+		            <i class="fas fa-upload"></i>
+		          </span>
+		          <span class="file-label">
+		            Choose a file…
+		          </span>
+		        </span>
+		        <span class="file-name">
+		          &nbsp;&nbsp;&nbsp;&nbsp;
+		        </span>
+		      </label>
+		    </div>
 		</div>
 		
 		<div class="field">
@@ -93,11 +117,25 @@
 <iframe id="iframe" src="" style="display:none" width="100%" height="500px"></iframe>
 </section>
 </div>
+
+<script>
+
+const fileInput = document.querySelector('#audio_div .file-label input[type=file]');
+fileInput.onchange = () => {
+    if (fileInput.files.length > 0) {
+	const fileName = document.querySelector('#audio_div .file-name');
+	fileName.textContent = fileInput.files[0].name;
+    }
+}
+
+</script>
+
 {% endblock %}
 
 {% block head %}
 	{{ super() }}
 	<script>
+
 	  function settableURL(){
 	    document.getElementById('iframe').src = "{{ url_for('handson', tmp=tmp) }}";
 	    document.getElementById('iframe').style.display = "block";
@@ -110,5 +148,15 @@
 	    document.getElementById('files_tab').classList.add("is-active")
             document.getElementById('excel_tab').classList.remove("is-active")
 	  }
+	
+	  function upload_own(){
+	    document.getElementById('upload_field').style.display = "block";
+	  }
+
+	  function no_upload(){
+	    document.getElementById('upload_field').style.display = "none";
+	  }
+
 	</script>
+	
 {% endblock %}
