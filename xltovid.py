@@ -69,7 +69,7 @@ def polly_json(text):
 	return(json_data)
 
 
-def create_images(text, image, story=False):
+def create_images(text, image, story=False, layout):
 	story = True if story=='1' else False
 	no_of_lines = len(text.strip().split('\n'))
 	text = underline_html(text)
@@ -120,18 +120,23 @@ def create_images(text, image, story=False):
 
 		logo = '<img src="logo.png" style="position: absolute; top: 0px; left: 0px;"></img>'
 		if type(image) == type(''):
-			if story:
-				if no_of_lines < 4:
-					text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(3, text_html)
-				else:
-					text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(1, text_html)
-				img = '<div style="height:350px;"><img src="{}" style="padding-top:40px;"></img></div>'.format(image_name)
-				html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}<div style="height: 360px; display: flex; justify-content: center; align-items: center; padding: 20px; padding-top: 30px;">{1}{2}</div></div></body></html>'.format(img, text, logo)
+			if layout == "vert":
+				if story:
+					if no_of_lines < 4:
+						text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(3, text_html)
+					else:
+						text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(1, text_html)
+					img = '<div style="height:350px;"><img src="{}" style="padding-top:40px;"></img></div>'.format(image_name)
+					html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}<div style="height: 360px; display: flex; justify-content: center; align-items: center; padding: 20px; padding-top: 30px;">{1}{2}</div></div></body></html>'.format(img, text, logo)
 
+				else:
+					img = '<div style="height:425px"><img src="{}" style="padding-top:30px"></img></div>'.format(image_name)
+					text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(7-no_of_lines, text_html)
+					html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}<div style="height: 360px; display: flex; justify-content: center; align-items: center; padding:20px">{1}{2}</div></div></body></html>'.format(img, text, logo)
 			else:
-				img = '<div style="height:425px"><img src="{}" style="padding-top:30px"></img></div>'.format(image_name)
+				img = '<div style="height:350px;"><img src="{}" style="flex-basis: 45%; display: flex; align-items: center; justify-content: center;"></img></div>'.format(image_name)
 				text = '<h1 style="font-size: {0}rem; margin: 0px"><p style="margin: 0px; text-align:center">{1}</p></h1>'.format(7-no_of_lines, text_html)
-				html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}<div style="height: 360px; display: flex; justify-content: center; align-items: center; padding:20px">{1}{2}</div></div></body></html>'.format(img, text, logo)
+				html = '<!DOCTYPE html><html><body style="margin:0px"><div id="vid_area" style="height: 720px; width: 1280px;">{0}<div style="display: flex; justify-content: center; align-items: center; padding:20px; padding-top: 30px; flex-basis: 55%;">{1}{2}</div></div></body></html>'.format(img, text, logo)
 		else:
 			if no_of_lines < 4:
 
@@ -150,17 +155,6 @@ def create_images(text, image, story=False):
 		images.append("images/{}.jpg".format(i))
 
 	return(images)
-
-
-'''
-def concatenate_videos(videos, output_name, tmpdir):
-	with open('{}/con.in'.format(tmpdir), 'w') as f:
-		print(videos)
-		for video in videos:
-			f.write("file '{0}/{1}'\n".format(tmpdir, video))
-	print(sys.path)
-	sub.call("ffmpeg -y -f concat -safe 0 -i {0}/con.in -strict -2 -video_track_timescale 90000 -max_muxing_queue_size 2048 -tune animation -crf 6".format(tmpdir).split(' ') + [output_name])
-'''
 
 
 def create_para_vid(speed, i, time_data, images, audio, output_name):
@@ -323,7 +317,7 @@ def process_json_data(data, voice):
 	return(time_data)
 
 
-def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slide, voice, user):
+def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slide, voice, user, layout):
 	mdir = os.getcwd()
 	files = ['pup.js', 'blank.mp3', 'blank_long.mp3', 'logo.png']
 	for f in files:
@@ -345,7 +339,7 @@ def create_vids_from_excel(inpfile, sheet, tmpdir, story, first_slide, last_slid
 
 		images_text = ' '.join(para.strip().replace('*', '').replace('\n', ' \n ').split(' '))
 #		print("images text: " + images_text)
-		images = create_images(images_text, sheet.cell(row=i, column=3).value, story)
+		images = create_images(images_text, sheet.cell(row=i, column=3).value, story, layout)
 
 		json_data = process_json_data(json_data, voice)
 		json_data_slow = process_json_data(json_data_slow, voice)
@@ -384,11 +378,12 @@ first_slide = sys.argv[6]
 last_slide = sys.argv[7]
 voice = sys.argv[8]
 user = sys.argv[9]
+layout = sys.argv[10]
 tmpname = "tmp" + re.search("^.*tmp(.*)$", tmpdir)[1]
 filter = {"tmp": tmpname}
 
 try:
-	create_vids_from_excel(inpfile, sheet_name, tmpdir, story, first_slide, last_slide, voice, user)
+	create_vids_from_excel(inpfile, sheet_name, tmpdir, story, first_slide, last_slide, voice, user, layout)
 	newvalues = { "$set": { 'status': "Successful" } }
 	result=db.data.update_one(filter, newvalues)
 except Exception as e:

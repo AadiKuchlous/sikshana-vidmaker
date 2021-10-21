@@ -138,6 +138,8 @@ def form_submit():
 		first_slide = request.form["s1"]
 		last_slide = request.form["sl"]
 		voice = request.form["voice"]
+#		outro = request.form["outro"]
+		layout = request.form["layout"]
 		audio_upload = (voice=="upload")
 
 		userid = str(current_user.id)
@@ -155,19 +157,52 @@ def form_submit():
 					audio_file = request.files['audio']
 					audio_name = audio_file.filename
 					ext = os.path.splitext(audio_name)[1]
-					final_name = "input" + ext
+					audio_file_name = "input" + ext
 					audio_file.save(os.path.join(tmpdir, final_name))
 				except:
 					return render_template('dataform.html', header="Please upload an audio file", sheets=session['sheets'])
 				
-				subprocess.Popen(args=["./audiotovid.py", 'input.xlsx', str(sheetName), str(tmpdir), str(videoName), story, str(first_slide), str(last_slide), final_name, userid],
-                                        env={"PATH": "./:/usr/bin:/usr/local/bin",
-                                                "PYTHONPATH": "/Users/aadikuchlous/Library/Python/3.6/lib/python/site-packages:/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages"})
+				subprocess.Popen(
+					args=[
+					    "./audiotovid.py",
+					    'input.xlsx',
+					    str(sheetName),
+					    str(tmpdir),
+					    str(videoName),
+					    story,
+					    str(first_slide),
+					    str(last_slide),
+					    audio_file_name,
+					    userid,
+					    layout
+					],
+					env={
+					    "PATH": "./:/usr/bin:/usr/local/bin",
+					    "PYTHONPATH": "/Users/aadikuchlous/Library/Python/3.6/lib/python/site-packages:/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages"
+					}
+				)
 
 			else:
-				subprocess.Popen(args=["./xltovid.py", 'input.xlsx', str(sheetName), str(tmpdir), str(videoName), story, str(first_slide), str(last_slide), voice.lower(), userid], 
-					env={"PATH": "./:/usr/bin:/usr/local/bin", 
-						"PYTHONPATH": "/Users/aadikuchlous/Library/Python/3.6/lib/python/site-packages:/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages"})
+				subprocess.Popen(
+					args=[
+					    "./xltovid.py",
+					    'input.xlsx',
+					    str(sheetName),
+					    str(tmpdir),
+					    str(videoName),
+					    story,
+					    str(first_slide),
+					    str(last_slide),
+					    voice.lower(),
+					    userid,
+					    layout
+					],
+					env={
+					    "PATH": "./:/usr/bin:/usr/local/bin", 
+					    "PYTHONPATH": "/Users/aadikuchlous/Library/Python/3.6/lib/python/site-packages:/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages"
+					}
+				)
+
 			now = datetime.now()
 			dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 			tmpname = "tmp" + re.search("^.*tmp(.*)$", tmpdir)[1]
