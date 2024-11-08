@@ -15,7 +15,6 @@ certifi==2020.12.5
 chardet==4.0.0
 click==7.1.2
 colorama==0.4.3
-command-not-found==0.3
 ConfigArgParse==0.13.0
 configobj==5.0.6
 constantly==15.1.0
